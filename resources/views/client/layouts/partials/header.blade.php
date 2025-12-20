@@ -157,7 +157,7 @@ Features:
                     <div class="flex flex-col">
                         <span class="text-2xl sm:text-3xl font-black tracking-tight">
                             <span
-                                class="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent">Joy</span><span
+                                class="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent">KingExpress</span><span
                                 class="text-gray-800">Travel</span>
                         </span>
                         <span class="text-[10px] text-gray-400 font-medium tracking-[0.2em] uppercase mt-0.5">Khám phá
