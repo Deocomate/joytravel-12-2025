@@ -1,0 +1,111 @@
+<?php
+
+use App\Http\Controllers\Admin\AboutUsController;
+use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\AdminBaseController;
+use App\Http\Controllers\Client\GoogleAuthController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ContactController as AdminContactController;
+use App\Http\Controllers\Admin\CustomerCareController;
+use App\Http\Controllers\Admin\NewsController as AdminNewsController;
+use App\Http\Controllers\Admin\TourController as AdminTourController;
+use App\Http\Controllers\Admin\DestinationController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Client\ClientAboutController;
+use App\Http\Controllers\Client\ClientAuthController;
+use App\Http\Controllers\Client\ClientBaseController;
+use App\Http\Controllers\Client\ClientCheckoutController;
+use App\Http\Controllers\Client\ClientContactController;
+use App\Http\Controllers\Client\ClientNewsController;
+use App\Http\Controllers\Client\ClientProfileController;
+use App\Http\Controllers\Client\ClientTourController;
+use App\Http\Middleware\Auth\AdminAuthMiddleware;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', [ClientBaseController::class, 'index'])->name('client.home');
+Route::get('/du-lich', [ClientTourController::class, 'index'])->name('client.tours');
+Route::get('/du-lich/{tour:slug}', [ClientTourController::class, 'show'])->name('client.tour.show');
+Route::get('/tin-tuc', [ClientNewsController::class, 'index'])->name('client.news');
+Route::get('/tin-tuc/{news:slug}', [ClientNewsController::class, 'show'])->name('client.news.show');
+Route::get('/gioi-thieu', [ClientAboutController::class, 'index'])->name('client.about');
+Route::get('/lien-he', [ClientContactController::class, 'index'])->name('client.contact');
+Route::post('/lien-he', [ClientContactController::class, 'store'])->name('client.contact.submit');
+Route::get('/api/search-suggestions', [ClientTourController::class, 'getSearchSuggestions'])->name('api.search.suggestions');
+Route::get('/api/destination-suggestions', [ClientTourController::class, 'getDestinationSuggestions'])->name('api.destination.suggestions');
+Route::post('/login', [ClientAuthController::class, 'handleLogin'])->name('client.login.submit');
+Route::post('/register', [ClientAuthController::class, 'handleRegistration'])->name('client.register.submit');
+Route::post('/forgot-password', [ClientAuthController::class, 'handleForgotPassword'])->name('client.forgot-password.submit');
+Route::get('/reset-password/{token}', [ClientAuthController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [ClientAuthController::class, 'handleResetPassword'])->name('password.update');
+Route::post('/logout', [ClientAuthController::class, 'logout'])->name('client.logout');
+Route::get('/dat-tour/{tour:slug}', [ClientCheckoutController::class, 'index'])->name('client.checkout');
+Route::post('/dat-tour/{tour:slug}', [ClientCheckoutController::class, 'store'])
+    ->middleware('throttle:2,1')
+    ->name('client.checkout.store');
+Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirectToGoogle'])->name('auth.google.redirect');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/tai-khoan', [ClientProfileController::class, 'index'])->name('client.profile');
+    Route::put('/tai-khoan', [ClientProfileController::class, 'update'])->name('client.profile.update');
+    Route::get('/tai-khoan/lich-su-dat-tour', [ClientProfileController::class, 'bookingHistory'])->name('client.profile.history');
+    Route::delete('/tai-khoan/don-hang/{order}/huy', [ClientProfileController::class, 'cancelOrder'])->name('client.order.cancel');
+    Route::get('/tai-khoan/doi-mat-khau', [ClientProfileController::class, 'changePassword'])->name('client.profile.change-password');
+    Route::put('/tai-khoan/doi-mat-khau', [ClientProfileController::class, 'updatePassword'])->name('client.profile.update-password');
+    Route::post('/email/verification-notification', [ClientProfileController::class, 'sendVerificationEmail'])
+        ->middleware('throttle:1,5')
+        ->name('verification.send');
+});
+
+Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+    $request->fulfill();
+    return redirect()->route('client.profile')->with('success', 'Xác minh email thành công!');
+})->middleware(['auth', 'signed'])->name('verification.verify');
+
+
+Route::get('/admin', function () {
+    return to_route('admin.dashboard.index');
+});
+Route::get('/admin/login', [AdminAuthController::class, "login"])->name("admin.login");
+Route::get('/admin/logout', [AdminAuthController::class, "logout"])->name("admin.logout");
+Route::post('/admin/authenticate', [AdminAuthController::class, "authenticate"])->name("admin.authenticate");
+
+
+Route::prefix('admin')->name("admin.")->middleware(AdminAuthMiddleware::class)->group(function () {
+    Route::get("/dashboard", [AdminBaseController::class, "index"])->name("dashboard.index");
+    Route::get('/dashboard/chart-data', [AdminBaseController::class, 'getChartData'])->name('dashboard.chartData');
+    Route::get('/dashboard/visitor-chart-data', [AdminBaseController::class, 'getVisitorChartData'])->name('dashboard.visitorChartData');
+
+    // New Category Routes
+    Route::get('categories/add-to-tour', [CategoryController::class, 'showAddToTourForm'])->name('categories.add-to-tour.create');
+    Route::post('categories/add-to-tour', [CategoryController::class, 'handleAddToTour'])->name('categories.add-to-tour.store');
+
+    Route::post('categories/update-order', [CategoryController::class, 'updateOrder'])->name('categories.updateOrder');
+    Route::resource('categories', CategoryController::class);
+    Route::resource('news', AdminNewsController::class);
+    Route::resource('tours', AdminTourController::class);
+    Route::resource('destinations', DestinationController::class);
+    Route::resource('customer-care', CustomerCareController::class)->except(['create', 'store', 'edit', 'update']);
+
+    Route::get('about-us', [AboutUsController::class, 'edit'])->name('about-us.edit');
+    Route::put('about-us', [AboutUsController::class, 'update'])->name('about-us.update');
+    Route::get('contacts', [AdminContactController::class, 'edit'])->name('contacts.edit');
+    Route::put('contacts', [AdminContactController::class, 'update'])->name('contacts.update');
+
+    Route::resource('users', UserController::class);
+
+    Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+    Route::resource('orders', OrderController::class)->except(['create', 'store', 'edit', 'update']);
+
+    // Routes for Payment Management
+    Route::get('/orders/{order}/payment', [OrderController::class, 'showPayment'])->name('orders.payment.show');
+    Route::patch('/orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.payment.update');
+});
+
+
+Route::any('/ckfinder/connector', '\CKSource\CKFinderBridge\Controller\CKFinderController@requestAction')
+    ->name('ckfinder_connector');
+Route::any('/ckfinder/browser', '\CKSource\CKFinderBridge\Controller\CKFinderController@browserAction')
+    ->name('ckfinder_browser');

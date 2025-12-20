@@ -1,0 +1,25 @@
+{
+  "laravel-boost": {
+    "command": "php",
+    "args": ["artisan", "boost:mcp"]
+  },
+  "playwright": {
+    "command": "npx",
+    "args": ["@playwright/mcp@latest"]
+  },
+  "github": {
+    "type": "http",
+    "url": "https://api.githubcopilot.com/mcp/",
+    "headers": {
+      "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
+    }
+  },
+  "vercel": {
+    "type": "sse",
+    "url": "https://mcp.vercel.com/sse"
+  },
+  "supabase": {
+    "type": "http",
+    "url": "https://mcp.supabase.com/mcp"
+  }
+}
