@@ -22,7 +22,7 @@ class ClientCheckoutController extends Controller
     {
         $user = Auth::user();
         $tour->load('destinations');
-        return view('client.pages.checkout.index', compact('tour', 'user'));
+        return view('client.checkout.index', compact('tour', 'user'));
     }
 
     public function store(Request $request, Tour $tour): RedirectResponse

@@ -24,14 +24,5 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFour();
-
-        View::composer('client.layouts.partials.header', HeaderComposer::class);
-
-        View::composer(['client.layouts.partials.header', 'client.layouts.partials.footer'], function ($view) {
-            $contactInfo = Contact::with(['branches' => function ($query) {
-                $query->orderBy('is_main', 'desc');
-            }])->first();
-            $view->with('contactInfo', $contactInfo);
-        });
     }
 }

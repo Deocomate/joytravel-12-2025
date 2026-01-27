@@ -17,7 +17,7 @@ class AboutUsController extends Controller
             ['content' => '']
         );
 
-        return view('admin.modules.about-us.edit', compact('aboutUsPage'));
+        return view('admin.about-us.edit', compact('aboutUsPage'));
     }
 
     public function update(Request $request): RedirectResponse

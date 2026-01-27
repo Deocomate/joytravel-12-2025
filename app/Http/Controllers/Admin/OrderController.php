@@ -45,13 +45,13 @@ class OrderController extends Controller
 
         $orders = $query->orderByDesc('created_at')->paginate(15)->withQueryString();
 
-        return view('admin.modules.orders.index', compact('orders'));
+        return view('admin.orders.index', compact('orders'));
     }
 
     public function show(Order $order): View
     {
         $order->load(['user', 'tour']);
-        return view('admin.modules.orders.show', compact('order'));
+        return view('admin.orders.show', compact('order'));
     }
 
     public function updateStatus(Request $request, Order $order): RedirectResponse
@@ -74,7 +74,7 @@ class OrderController extends Controller
     public function showPayment(Order $order): View
     {
         $order->load('payment', 'user', 'tour');
-        return view('admin.modules.orders.payment', compact('order'));
+        return view('admin.orders.payment', compact('order'));
     }
 
     public function updatePayment(Request $request, Order $order): RedirectResponse

@@ -2,148 +2,94 @@
 
 ## Directory Structure
 
-```
+```text
 kingexpresstravel.com/
 ├── app/
 │   ├── Http/
 │   │   ├── Controllers/
-│   │   │   ├── Admin/          # 11 admin controllers
-│   │   │   ├── Client/         # 9 client controllers
-│   │   │   └── Api/            # API placeholder
-│   │   ├── Middleware/         # 4 custom middleware
-│   │   └── Requests/           # Form request validation
-│   ├── Models/                 # 12 Eloquent models
-│   ├── Mail/                   # 3 mailable classes
-│   └── View/Components/        # 20 Blade components
-├── config/                     # Laravel + custom configs
+│   │   │   ├── Admin/          # 11 Controllers (Resource & Auth)
+│   │   │   ├── Client/         # 9 Controllers (Public Logic)
+│   │   │   └── Api/            # 1 Base Controller
+│   │   ├── Middleware/         # Auth guards & CKFinder bypass
+│   │   └── Requests/           # Form validation
+│   ├── Models/                 # 11 Eloquent Models
+│   ├── Mail/                   # 3 Mailables (Queue supported)
+│   └── View/Components/        # Blade Components logic
+│       ├── Admin/              # Inputs & Menus components
+│       └── Client/             # UI components (Header, Footer, Cards)
+├── config/                     # System configs (ckfinder, auth, mail)
 ├── database/
-│   ├── migrations/             # Schema definitions
-│   └── seeders/                # Sample data
+│   ├── migrations/             # 4 main migration files
+│   └── seeders/                # Database seeders
+├── public/
+│   ├── client/                 # Client assets (images/cities)
+│   └── userfiles/              # CKFinder storage
 ├── resources/
 │   ├── views/
-│   │   ├── admin/              # Admin panel views
-│   │   ├── client/             # Client website views
-│   │   ├── components/         # Blade components
-│   │   └── mail/               # Email templates
-│   ├── css/                    # Stylesheets
-│   └── js/                     # JavaScript
+│   │   ├── admin/              # AdminLTE Views
+│   │   ├── client/             # Tailwind Views
+│   │   ├── components/         # Reusable UI Blocks
+│   │   └── mail/               # Email Templates
 ├── routes/
-│   ├── web.php                 # All web routes (~55)
-│   └── api.php                 # API routes
-├── public/                     # Public assets
-└── docs/                       # Documentation
+│   ├── web.php                 # ~50+ Routes (Grouped by Admin/Client)
+│   └── console.php             # Artisan commands
+└── docs/                       # Project Documentation
 ```
 
-## Key Files by Layer
+## Key Components
 
-### Controllers
+### 1. Controllers Layout
 
-| Controller | Purpose | Methods |
-|------------|---------|---------|
-| **Admin** |||
-| `AdminBaseController` | Dashboard | index, revenueChart, visitorChart |
-| `AdminAuthController` | Auth | login, authenticate, logout |
-| `TourController` | Tour CRUD | index, create, store, edit, update, destroy |
-| `OrderController` | Order mgmt | index, show, updateStatus, cancel |
-| **Client** |||
-| `ClientTourController` | Tours | index, show, filter, search |
-| `ClientCheckoutController` | Booking | index, store, sendConfirmation |
-| `ClientProfileController` | Profile | index, history, update, cancelOrder |
-| `GoogleAuthController` | OAuth | redirect, callback |
+| Namespace  | Key Controllers                     | Purpose                             |
+| ---------- | ----------------------------------- | ----------------------------------- |
+| **Admin**  | `TourController`, `OrderController` | Core business logic management      |
+|            | `CategoryController`                | Recursive category tree (Tour/News) |
+|            | `AdminBaseController`               | Dashboard analytics & Charts        |
+| **Client** | `ClientTourController`              | Tour listing, filtering, detail     |
+|            | `ClientCheckoutController`          | Booking process & validation        |
+|            | `GoogleAuthController`              | Socialite integration               |
 
-### Models & Relationships
+### 2. View Components (Blade)
 
-```
-User ──┬── hasMany ──→ Order
-       └── via google_id ──→ Google OAuth
+The project heavily relies on Blade Components for standardized UI:
 
-Tour ──┬── belongsToMany ──→ Category (pivot: tour_categories)
-       └── belongsToMany ──→ Destination (pivot: tour_destinations)
+**Admin Inputs (`x-admin.inputs.*`):**
 
-Order ──┬── belongsTo ──→ User
-        ├── belongsTo ──→ Tour
-        └── hasOne ──→ Payment
+- `Text`, `Email`, `Number`, `Price`, `Time`, `Date`
+- `Select`, `SelectSimple`, `SelectMultiple`
+- `Editor` (CKEditor 5), `EditorArray`
+- `ImageLink` (CKFinder Popup), `ImageLinkArray`
+- `TourScheduleArray` (Complex JSON builder)
 
-Category ──┬── hasMany ──→ News
-           └── belongsTo ──→ Category (self-referential parent)
-```
+**Client UI (`x-client.*`):**
 
-### Middleware Pipeline
+- `tour-card`: Displays tour thumbnail, price, rating.
+- `news-card`, `news-card-horizontal`: Blog layouts.
+- `tour-search-bar`: Floating search with Alpine.js.
+- `modal`: Reusable Alpine.js modal.
 
-| Middleware | Applied To | Function |
-|------------|-----------|----------|
-| `AdminAuthMiddleware` | `/admin/*` | Auth + role=admin check |
-| `ClientAuthMiddleware` | Protected client routes | Placeholder (pass-through) |
-| `TrackVisitorsMiddleware` | All client routes | Log visitor IP/UA |
-| `CustomCKFinderAuth` | CKFinder | Auth bypass (⚠️ insecure) |
+### 3. Middleware
 
-### View Components
+- `AdminAuthMiddleware`: Protects `/admin` routes, checks `role === 'admin'`.
+- `ClientAuthMiddleware`: Placeholder for client-specific logic.
+- `CustomCKFinderAuth`: Bypasses CKFinder auth for local dev (Should be secured in prod).
 
-**Input Components** (18):
-- `Text`, `TextArea`, `Select`, `Checkbox`, `Hidden`
-- `Editor` (CKEditor integration)
-- `ImageLink`, `ImageLinkArray`
-- `TourScheduleArray`, `SelectCategory`, `SelectDestination`
-- `MenuBar`, `MenuItem`
+## Database & Models
 
-**Client Components** (5):
-- `tour-card`, `tour-search-bar`, `news-card`, `modal`
+**Core Models:**
 
-## Configuration Files
+- `Tour`: Uses JSON casting for `images` and `tour_schedule`.
+- `Category`: Recursive parent-child relationship.
+- `Order`: Links `User` and `Tour`.
+- `Payment`: One-to-one with `Order`.
 
-| File | Purpose |
-|------|---------|
-| `config/ckfinder.php` | CKFinder file browser settings |
-| `config/services.php` | Google OAuth credentials |
-| `config/mail.php` | SMTP settings |
+**Key Relationships:**
 
-## Database Seeders
+- Tour `BelongsToMany` Category.
+- Tour `BelongsToMany` Destination (ordered by `position`).
+- User `HasMany` Order.
 
-Run order for fresh install:
-```bash
-php artisan db:seed --class=UserSeeder      # Admin account
-php artisan db:seed --class=CategorySeeder  # 5 categories
-php artisan db:seed --class=DestinationSeeder # 20 destinations
-php artisan db:seed --class=NewsSeeder
-php artisan db:seed --class=AboutUsSeeder
-php artisan db:seed --class=ContactSeeder
-```
+## Frontend Technologies
 
-Default admin: `root@gmail.com`
-
-## Frontend Assets
-
-### Admin Panel (AdminLTE)
-- DataTables for listing pages
-- Select2 for dropdowns
-- CKEditor 5 for rich text
-- Chart.js for dashboard charts
-- SortableJS for drag-drop ordering
-
-### Client Website (Tailwind)
-- Swiper.js for carousels
-- AOS for scroll animations
-- SweetAlert2 for modals
-- Axios for AJAX requests
-- Primary color: `#f59e0b` (amber)
-
-## Email Templates
-
-| Template | Trigger |
-|----------|---------|
-| `order-confirmation` | After successful booking |
-| `email-verification` | New user registration |
-| `reset-password` | Password reset request |
-
----
-
-## File Count Summary
-
-| Directory | Count |
-|-----------|-------|
-| Controllers | 20 |
-| Models | 12 |
-| Migrations | ~17 |
-| Views | ~50+ |
-| Components | 20 |
-| Routes | ~55 |
+- **Admin:** AdminLTE 3 (Bootstrap 4), jQuery, Select2, Ion.RangeSlider, SortableJS.
+- **Client:** Tailwind CSS (v3 CDN), Alpine.js, SwiperJS, AOS (Animate On Scroll).

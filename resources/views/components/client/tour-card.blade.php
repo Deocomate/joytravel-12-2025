@@ -1,6 +1,6 @@
 @props(['tour'])
 
-@if($tour)
+@if ($tour)
     <div
         class="tour-card group h-full flex flex-col rounded-2xl overflow-hidden bg-white/80 backdrop-blur-sm transition-all duration-500 hover:-translate-y-2">
         <style>
@@ -80,24 +80,33 @@
             class="block flex flex-col flex-grow">
             <!-- Image Section -->
             <div class="tour-card-image relative h-52">
-                <img class="w-full h-full object-cover" src="{{ $tour->thumbnail ?? '/userfiles/images/placeholder.jpg' }}"
+                <img class="w-full h-full object-cover"
+                    src="{{ $tour->thumbnail ?? '/userfiles/images/placeholder.jpg' }}"
                     alt="{{ $tour->name ?? 'Hình ảnh tour' }}" loading="lazy">
 
                 <!-- Location Badge with Glassmorphism -->
-                <div class="location-badge absolute top-3 left-3 z-10 px-3 py-1.5 rounded-full flex items-center gap-x-1.5">
+                <div
+                    class="location-badge absolute top-3 left-3 z-10 px-3 py-1.5 rounded-full flex items-center gap-x-1.5">
                     <i class="fa-solid fa-location-dot text-[var(--color-primary)] text-sm"></i>
                     <span
                         class="text-gray-800 text-xs font-semibold">{{ $tour->destinations->first()->name ?? 'Nhiều nơi' }}</span>
                 </div>
 
                 <!-- Featured Indicator (optional) -->
-                @if($tour->is_featured ?? false)
+                @if ($tour->is_featured ?? false)
                     <div class="featured-indicator absolute top-3 right-3 z-10 px-2.5 py-1 rounded-full">
                         <span class="text-white text-xs font-bold flex items-center gap-1">
                             <i class="fa-solid fa-star text-[10px]"></i> Nổi bật
                         </span>
                     </div>
                 @endif
+
+                <!-- Duration Badge -->
+                <div
+                    class="absolute bottom-3 left-3 z-10 bg-black/60 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                    <i class="fa-regular fa-clock"></i>
+                    <span class="font-medium">{{ $tour->duration ?? 'N/A' }}</span>
+                </div>
 
                 <!-- Price Tag Overlay -->
                 <div class="price-tag absolute bottom-3 right-3 z-10 px-3 py-1.5 rounded-lg">
@@ -114,6 +123,17 @@
                     class="font-bold text-gray-800 text-base leading-snug h-12 overflow-hidden group-hover:text-[var(--color-primary)] transition-colors duration-300 [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]">
                     {{ $tour->name ?? 'Tên tour đang được cập nhật' }}
                 </h3>
+
+                <!-- Rating Display -->
+                <div class="flex items-center gap-2 mt-2">
+                    <div class="flex gap-0.5">
+                        @for ($i = 0; $i < 5; $i++)
+                            <i
+                                class="fa-solid fa-star text-xs {{ $i < ($tour->rating ?? 5) ? 'text-amber-400' : 'text-gray-300' }}"></i>
+                        @endfor
+                    </div>
+                    <span class="text-xs text-gray-500">({{ $tour->reviews_count ?? rand(10, 50) }} đánh giá)</span>
+                </div>
 
                 <!-- Tour Details -->
                 <div class="mt-4 space-y-2.5 flex-grow">

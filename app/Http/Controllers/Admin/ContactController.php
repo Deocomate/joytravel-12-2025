@@ -15,7 +15,7 @@ class ContactController extends Controller
     public function edit(): View
     {
         $contact = Contact::with('branches')->firstOrCreate();
-        return view('admin.modules.contact.edit', compact('contact'));
+        return view('admin.contact.edit', compact('contact'));
     }
 
     public function update(Request $request): RedirectResponse

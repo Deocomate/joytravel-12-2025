@@ -2,21 +2,19 @@
 
 namespace App\Models;
 
-use App\Mail\ResetPasswordMail; // Thêm dòng này
+use App\Mail\ResetPasswordMail;
 use App\Mail\VerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Mail; // Thêm dòng này
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
-
-    // ... các thuộc tính khác
 
     protected $fillable = [
         'name',
@@ -27,8 +25,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'address',
         'avatar',
         'account_type',
-        'email_verified_at',
         'google_id',
+        // Removed 'email_verified_at' for security
     ];
 
     protected $hidden = [

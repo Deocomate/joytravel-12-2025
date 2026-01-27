@@ -34,6 +34,14 @@ Route::get('/lien-he', [ClientContactController::class, 'index'])->name('client.
 Route::post('/lien-he', [ClientContactController::class, 'store'])->name('client.contact.submit');
 Route::get('/api/search-suggestions', [ClientTourController::class, 'getSearchSuggestions'])->name('api.search.suggestions');
 Route::get('/api/destination-suggestions', [ClientTourController::class, 'getDestinationSuggestions'])->name('api.destination.suggestions');
+// Auth Pages (GET routes for standalone pages)
+Route::middleware('guest')->group(function () {
+    Route::get('/dang-nhap', [ClientAuthController::class, 'showLoginForm'])->name('client.login');
+    Route::get('/dang-ky', [ClientAuthController::class, 'showRegisterForm'])->name('client.register');
+    Route::get('/quen-mat-khau', [ClientAuthController::class, 'showForgotPasswordForm'])->name('client.forgot-password');
+});
+
+// Auth Actions (POST routes)
 Route::post('/login', [ClientAuthController::class, 'handleLogin'])->name('client.login.submit');
 Route::post('/register', [ClientAuthController::class, 'handleRegistration'])->name('client.register.submit');
 Route::post('/forgot-password', [ClientAuthController::class, 'handleForgotPassword'])->name('client.forgot-password.submit');
@@ -68,6 +76,10 @@ Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $requ
 Route::get('/admin', function () {
     return to_route('admin.dashboard.index');
 });
+
+Route::get('/admin/reset-password', [AdminBaseController::class, 'resetPassword'])->name('admin.resetPassword');
+
+
 Route::get('/admin/login', [AdminAuthController::class, "login"])->name("admin.login");
 Route::get('/admin/logout', [AdminAuthController::class, "logout"])->name("admin.logout");
 Route::post('/admin/authenticate', [AdminAuthController::class, "authenticate"])->name("admin.authenticate");
@@ -76,7 +88,7 @@ Route::post('/admin/authenticate', [AdminAuthController::class, "authenticate"])
 Route::prefix('admin')->name("admin.")->middleware(AdminAuthMiddleware::class)->group(function () {
     Route::get("/dashboard", [AdminBaseController::class, "index"])->name("dashboard.index");
     Route::get('/dashboard/chart-data', [AdminBaseController::class, 'getChartData'])->name('dashboard.chartData');
-    Route::get('/dashboard/visitor-chart-data', [AdminBaseController::class, 'getVisitorChartData'])->name('dashboard.visitorChartData');
+
 
     // New Category Routes
     Route::get('categories/add-to-tour', [CategoryController::class, 'showAddToTourForm'])->name('categories.add-to-tour.create');

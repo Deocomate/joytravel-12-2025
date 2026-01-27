@@ -38,12 +38,12 @@ class CustomerCareController extends Controller
         });
 
         $contacts = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
-        return view('admin.modules.customer-care.index', compact('contacts'));
+        return view('admin.customer-care.index', compact('contacts'));
     }
 
     public function show(CustomerCare $customerCare): View
     {
-        return view('admin.modules.customer-care.show', compact('customerCare'));
+        return view('admin.customer-care.show', compact('customerCare'));
     }
 
     public function destroy(CustomerCare $customerCare): RedirectResponse

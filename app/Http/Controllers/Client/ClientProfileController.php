@@ -18,7 +18,7 @@ class ClientProfileController extends Controller
     public function index(): View
     {
         $user = Auth::user();
-        return view('client.pages.profile.index', compact('user'));
+        return view('client.profile.index', compact('user'));
     }
 
     public function update(Request $request): RedirectResponse
@@ -53,7 +53,7 @@ class ClientProfileController extends Controller
     public function changePassword(): View
     {
         $user = Auth::user();
-        return view('client.pages.profile.change-password', compact('user'));
+        return view('client.profile.change-password', compact('user'));
     }
 
     public function updatePassword(Request $request): RedirectResponse
@@ -96,14 +96,14 @@ class ClientProfileController extends Controller
             ->paginate(5);
 
         if ($request->ajax()) {
-            $html = view('client.pages.profile.partials._booking_history_items', compact('orders'))->render();
+            $html = view('client.profile.partials._booking_history_items', compact('orders'))->render();
             return response()->json([
                 'html' => $html,
                 'next_page_url' => $orders->hasMorePages() ? $orders->nextPageUrl() : null,
             ]);
         }
 
-        return view('client.pages.profile.history', compact('user', 'orders'));
+        return view('client.profile.history', compact('user', 'orders'));
     }
 
     public function cancelOrder(Request $request, Order $order): RedirectResponse

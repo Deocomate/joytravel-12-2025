@@ -17,7 +17,30 @@ use Illuminate\View\View;
 
 class ClientAuthController extends Controller
 {
-    // ... (các phương thức handleLogin, handleRegistration không đổi) ...
+    /**
+     * Display the login form page.
+     */
+    public function showLoginForm(): View
+    {
+        return view('client.auth.login');
+    }
+
+    /**
+     * Display the registration form page.
+     */
+    public function showRegisterForm(): View
+    {
+        return view('client.auth.register');
+    }
+
+    /**
+     * Display the forgot password form page.
+     */
+    public function showForgotPasswordForm(): View
+    {
+        return view('client.auth.forgot-password');
+    }
+
     public function handleLogin(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
@@ -32,7 +55,9 @@ class ClientAuthController extends Controller
                 ->with('success', 'Đăng nhập thành công!');
         }
 
-        return back()->with('error', 'Email hoặc mật khẩu không chính xác.');
+        return redirect()->route('client.login')
+            ->withErrors(['email' => 'Email hoặc mật khẩu không chính xác.'])
+            ->withInput($request->only('email'));
     }
 
     public function handleRegistration(Request $request): RedirectResponse
@@ -45,20 +70,12 @@ class ClientAuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            $response = back()
+            $errorMessage = $validator->errors()->first();
+
+            return redirect()->route('client.register')
                 ->withErrors($validator)
                 ->withInput()
-                ->with('registration_error', true);
-
-            if ($validator->errors()->has('email')) {
-                return $response->with('error', $validator->errors()->first('email'));
-            }
-
-            if ($validator->errors()->has('password')) {
-                return $response->with('error', $validator->errors()->first('password'));
-            }
-
-            return $response;
+                ->with('error', $errorMessage);
         }
 
         $validated = $validator->validated();

@@ -41,6 +41,12 @@ class Order extends Model
 {
     use HasFactory;
 
+    // Status Constants based on Migration Enum
+    const STATUS_PENDING = 'PENDING';
+    const STATUS_CONFIRMED = 'CONFIRMED';
+    const STATUS_COMPLETED = 'COMPLETED';
+    const STATUS_CANCELLED = 'CANCELLED';
+
     protected $fillable = [
         'user_id',
         'full_name',

@@ -2,105 +2,64 @@
 
 ## Product Summary
 
-**King Express Travel** is a tour booking and sales management system for Vietnamese travel agency. The platform consists of a public-facing client website for tour browsing/booking and an admin panel for content/order management.
+**King Express Travel** is a hybrid monolith web application for a Vietnamese travel agency. It combines a high-performance, SEO-friendly client website with a robust internal admin panel.
 
-## Tech Stack
+## Status: V1.0.0 (Development/Staging)
 
-| Layer | Technology |
-|-------|------------|
-| Backend | PHP 8.2, Laravel 12.0 |
-| Database | MySQL |
-| Frontend (Admin) | AdminLTE 3, Bootstrap 4, jQuery |
-| Frontend (Client) | Tailwind CSS, Swiper.js, AOS |
-| Auth | Laravel Session, Google OAuth (Socialite) |
-| File Upload | CKFinder |
-| Email | Laravel Mail (Queued) |
+- **Framework**: Laravel 12
+- **Last Update**: January 2026
 
-## Core Features
+## Core Features Implemented
 
-### Client Website
-- **Tour Browsing**: List, filter, search tours by destination/category
-- **Tour Booking**: Multi-passenger checkout with pricing tiers (adult/child/toddler/infant)
-- **User Accounts**: Registration, login, Google OAuth, email verification
-- **Profile Management**: View booking history, cancel orders, change password
-- **Content Pages**: News/blog, About Us, Contact information
+### 1. Client Website (Frontend)
 
-### Admin Panel
-- **Dashboard**: Revenue charts, visitor analytics
-- **Tour Management**: CRUD with images, schedules, pricing, slot management
-- **Order Management**: View, confirm, cancel orders with reason
-- **Content Management**: Categories, News, Destinations, Contact branches
-- **User Management**: View customers, manage admin accounts
+- **Home Page**: Hero slider, featured tours, popular destinations, stats.
+- **Tour Booking**:
+    - Filter by Category, Destination, Price, Duration.
+    - Detail view with Image Gallery (Swiper), Itinerary (Accordion).
+    - Checkout form with Multi-pax pricing (Adult/Child/Toddler/Infant).
+- **User System**:
+    - Register/Login (Local + Google OAuth).
+    - Profile: Update info, Change password.
+    - **Booking History**: View orders, Cancel order (if status is Pending).
+- **News & Info**: Blog listing, Detail view, About Us, Contact form.
 
-## Business Rules
+### 2. Admin Panel (Backend)
 
-### Pricing Model
-| Passenger Type | Description |
-|---------------|-------------|
-| Adult | Full price |
-| Child | Reduced price |
-| Toddler | Lower price tier |
-| Infant | Minimal/free |
+- **Dashboard**: Chart.js integration for Revenue & Order statistics (Filter by Week/Month/Year).
+- **Tour Management**:
+    - Full CRUD.
+    - **Itinerary Builder**: Dynamic JSON-based schedule builder.
+    - **Gallery Manager**: Multiple image selection via CKFinder.
+- **Order Management**:
+    - Workflow: Pending -> Confirmed -> Completed/Cancelled.
+    - Payment status tracking.
+- **Content Management**:
+    - Category Tree (Nested Sortable).
+    - Destinations, News, About Us, Contact Info.
+    - Customer Care (Contact form submissions).
 
-### Order Status Flow
-```
-PENDING → CONFIRMED → COMPLETED
-    ↓
-CANCELLED (with reason)
-```
+## Key Technical Decisions
 
-### Payment Status Flow
-```
-PENDING → SUCCESS
-    ↓
-FAILED / CANCELLED / REFUNDED
-```
+### 1. No API-First Approach
 
-## Target Users
+The project uses Server-Side Rendering (Blade) for SEO benefits and rapid development. API endpoints (`/api/*`) exist only for specific AJAX features like Search Suggestions.
 
-1. **Visitors**: Browse tours, view content
-2. **Registered Customers**: Book tours, manage profile, view history
-3. **Admins**: Full system management access
+### 2. File Management
 
-## URL Structure
+**CKFinder 5** is deeply integrated. Images are not stored via standard Laravel Storage `put()`, but managed through the CKFinder interface and referenced by relative URL paths in the database.
 
-| Path | Purpose |
-|------|---------|
-| `/` | Homepage |
-| `/du-lich` | Tour listing |
-| `/du-lich/{slug}` | Tour detail |
-| `/tin-tuc` | News listing |
-| `/dat-tour` | Checkout |
-| `/tai-khoan` | Profile |
-| `/admin` | Admin dashboard |
+### 3. Payment Gateway
 
-## Key Integrations
+Currently, the system uses a **Manual Payment** model or **VNPAY Placeholder**.
 
-1. **Google OAuth**: Social login via Laravel Socialite
-2. **CKFinder**: File/image management for CKEditor
-3. **Email Service**: Order confirmation, password reset, verification
+- Users select "Office Payment" or "VNPAY".
+- Orders are created with `PENDING` payment status.
+- Admin manually updates payment status after verifying bank transfer or cash.
 
-## Rate Limits
+## Future Roadmap (To-Do)
 
-| Action | Limit |
-|--------|-------|
-| Checkout | 2 requests/minute |
-| Email Verification | 1 request/5 minutes |
-
-## Deployment Requirements
-
-- PHP 8.2+
-- MySQL 8.0+
-- Composer
-- Node.js (for asset compilation)
-- SMTP server for emails
-- Google OAuth credentials
-
----
-
-## Unresolved Questions
-
-1. **CKFinder Auth**: Currently always returns true - needs proper auth implementation
-2. **API Layer**: `ApiBaseController` is empty placeholder - future mobile app?
-3. **Payment Integration**: Payment model exists but no gateway integration visible
-4. **Slot Management**: How are `remaining_slots` decremented on booking?
+1. **Payment Integration**: Implement real VNPAY/Momo IPN callback.
+2. **Security**: Replace `CustomCKFinderAuth` with real Admin middleware check.
+3. **Caching**: Implement Redis caching for Homepage and Tour Listing to improve performance under load.
+4. **Notifications**: Real-time notifications (Pusher) for new orders.

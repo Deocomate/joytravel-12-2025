@@ -43,20 +43,33 @@ class NewsController extends Controller
         $newsItems = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
         $categories = Category::where('type', 'NEWS')->get();
 
-        return view('admin.modules.news.index', compact('newsItems', 'categories'));
+        return view('admin.news.index', compact('newsItems', 'categories'));
     }
 
     public function create(): View
     {
         $categories = Category::where('type', 'NEWS')->get();
-        return view('admin.modules.news.createOrEdit', compact('categories'));
+        return view('admin.news.createOrEdit', compact('categories'));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $validatedData = $this->validateRequest($request);
-        $validatedData['slug'] = $this->generateUniqueSlug($validatedData['title']);
+        // Inline Validation
+        $validatedData = $request->validate([
+            'title' => 'required|string|max:255',
+            'category_id' => [
+                'required',
+                Rule::exists('categories', 'id')->where('type', 'NEWS')
+            ],
+            'thumbnail' => 'nullable|string',
+            'priority' => 'nullable|integer',
+            'short_description' => 'nullable|string',
+            'contents' => 'nullable|string',
+        ], [
+            'category_id.exists' => 'Danh mục được chọn không hợp lệ hoặc không phải là danh mục tin tức.'
+        ]);
 
+        $validatedData['slug'] = $this->generateUniqueSlug($validatedData['title']);
         News::create($validatedData);
 
         return redirect()->route('admin.news.index')->with('success', 'Tạo mới tin tức thành công.');
@@ -65,12 +78,26 @@ class NewsController extends Controller
     public function edit(News $news): View
     {
         $categories = Category::where('type', 'NEWS')->get();
-        return view('admin.modules.news.createOrEdit', compact('news', 'categories'));
+        return view('admin.news.createOrEdit', compact('news', 'categories'));
     }
 
     public function update(Request $request, News $news): RedirectResponse
     {
-        $validatedData = $this->validateRequest($request);
+        // Inline Validation
+        $validatedData = $request->validate([
+            'title' => 'required|string|max:255',
+            'category_id' => [
+                'required',
+                Rule::exists('categories', 'id')->where('type', 'NEWS')
+            ],
+            'thumbnail' => 'nullable|string',
+            'priority' => 'nullable|integer',
+            'short_description' => 'nullable|string',
+            'contents' => 'nullable|string',
+        ], [
+            'category_id.exists' => 'Danh mục được chọn không hợp lệ hoặc không phải là danh mục tin tức.'
+        ]);
+
         if ($validatedData['title'] !== $news->title) {
             $validatedData['slug'] = $this->generateUniqueSlug($validatedData['title'], $news->id);
         }
@@ -84,23 +111,6 @@ class NewsController extends Controller
     {
         $news->delete();
         return redirect()->route('admin.news.index')->with('success', 'Xóa tin tức thành công.');
-    }
-
-    private function validateRequest(Request $request): array
-    {
-        return $request->validate([
-            'title' => 'required|string|max:255',
-            'category_id' => [
-                'required',
-                Rule::exists('categories', 'id')->where('type', 'NEWS')
-            ],
-            'thumbnail' => 'nullable|string',
-            'priority' => 'nullable|integer',
-            'short_description' => 'nullable|string',
-            'contents' => 'nullable|string',
-        ], [
-            'category_id.exists' => 'Danh mục được chọn không hợp lệ hoặc không phải là danh mục tin tức.'
-        ]);
     }
 
     private function generateUniqueSlug(string $title, ?int $exceptId = null): string

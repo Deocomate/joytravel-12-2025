@@ -1,247 +1,77 @@
 # System Architecture - King Express Travel
 
-## High-Level Architecture
+## Tech Stack Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        CLIENTS                              │
-├─────────────────────────┬───────────────────────────────────┤
-│   Client Website        │         Admin Panel               │
-│   (Tailwind CSS)        │         (AdminLTE 3)              │
-└───────────┬─────────────┴───────────────┬───────────────────┘
-            │                             │
-            ▼                             ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Laravel 12 Application                   │
-├─────────────────────────────────────────────────────────────┤
-│  Routes → Middleware → Controllers → Models → Views         │
-├─────────────────────────────────────────────────────────────┤
-│  Session Auth │ Google OAuth │ Queued Emails │ CKFinder     │
-└───────────────────────────┬─────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                        MySQL Database                       │
-│  Users │ Tours │ Orders │ Payments │ Categories │ News      │
-└─────────────────────────────────────────────────────────────┘
-```
+| Layer         | Technology          | Details                                             |
+| ------------- | ------------------- | --------------------------------------------------- |
+| **Framework** | Laravel 12          | PHP 8.2+ Core                                       |
+| **Database**  | MySQL / MariaDB     | JSON Column Support                                 |
+| **Admin UI**  | AdminLTE 3          | Bootstrap 4, jQuery, CKEditor 5                     |
+| **Client UI** | Tailwind CSS        | Alpine.js, Swiper, AOS                              |
+| **Auth**      | Session & Socialite | Dual Guards (Web/Admin logic), Google Login         |
+| **File Mgr**  | CKFinder 5          | Integration via `ckfinder/ckfinder-laravel-package` |
 
-## Database Schema
+## Database Schema (ERD)
 
-### Entity Relationship Diagram
+### Users & Auth
 
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│    users     │     │    tours     │     │  categories  │
-├──────────────┤     ├──────────────┤     ├──────────────┤
-│ id           │     │ id           │     │ id           │
-│ name         │     │ tour_code    │     │ name         │
-│ email        │     │ name         │     │ slug         │
-│ password     │     │ slug         │     │ type (ENUM)  │
-│ role         │◄────│ duration     │     │ parent_id    │──┐
-│ google_id    │     │ price_adult  │     │ is_active    │  │
-│ account_type │     │ price_child  │     └──────────────┘  │
-└──────┬───────┘     │ remaining    │            ▲          │
-       │             │ images (JSON)│            │          │
-       │             │ schedule(JSON)│           │ self-ref │
-       │             └──────┬───────┘            └──────────┘
-       │                    │
-       │    ┌───────────────┼───────────────┐
-       │    │               │               │
-       │    ▼               ▼               ▼
-       │ ┌────────────┐ ┌────────────┐ ┌────────────────┐
-       │ │tour_categories│ │tour_destinations│ │ destinations │
-       │ ├────────────┤ ├────────────┤ ├────────────────┤
-       │ │ tour_id    │ │ tour_id    │ │ id             │
-       │ │ category_id│ │ destination│ │ name           │
-       │ └────────────┘ │ position   │ │ slug           │
-       │                └────────────┘ └────────────────┘
-       │
-       ▼
-┌──────────────┐     ┌──────────────┐
-│    orders    │     │   payments   │
-├──────────────┤     ├──────────────┤
-│ id           │     │ id           │
-│ user_id      │────►│ order_id     │
-│ tour_id      │     │ method       │
-│ departure    │     │ transaction  │
-│ status       │     │ amount       │
-│ total_price  │     │ status       │
-│ cancel_reason│     └──────────────┘
-└──────────────┘
-```
+- **users**: `id`, `email`, `password`, `google_id`, `role` ('admin'|'user'), `account_type` (LOCAL/GOOGLE).
 
-### Status Enumerations
+### Content Management
 
-```
-Order Status:    PENDING → CONFIRMED → COMPLETED
-                    │
-                    └─→ CANCELLED
+- **categories**: Recursive tree (`parent_id`), `type` ('TOUR'|'NEWS').
+- **tours**: Core product.
+    - `images`: JSON Array.
+    - `tour_schedule`: JSON Array of objects `{title, content}`.
+    - `price_*`: Multiple pricing tiers (Adult, Child, Toddler, Infant).
+- **destinations**: Locations (`name`, `slug`).
+- **news**: Blog posts linked to categories.
 
-Payment Status:  PENDING → SUCCESS
-                    │
-                    ├─→ FAILED
-                    ├─→ CANCELLED
-                    └─→ REFUNDED
+### Sales & Operations
 
-Category Type:   TOUR | NEWS
-```
+- **orders**:
+    - Status: `PENDING` -> `CONFIRMED` -> `COMPLETED` | `CANCELLED`.
+    - `cancellation_reason`: Text (required if cancelled).
+- **payments**:
+    - Status: `PENDING` -> `SUCCESS` -> `REFUNDED`...
+    - `method`: 'Thanh toán tại văn phòng' | 'VNPAY'.
 
-## Authentication Flow
+## Request Life Cycle
 
-### Session-Based Auth (Default)
+### 1. Booking Flow
 
-```
-┌────────┐    POST /login     ┌────────────┐
-│ Client │ ─────────────────► │ AuthController │
-└────────┘                    └──────┬─────┘
-                                     │
-                              validate credentials
-                                     │
-                                     ▼
-                              ┌──────────────┐
-                              │ Create Session │
-                              └──────┬───────┘
-                                     │
-                              ┌──────▼───────┐
-    Set session cookie ◄───── │ Redirect Home │
-                              └──────────────┘
-```
+1. **User** visits `/dat-tour/{slug}`.
+2. **ClientCheckoutController@store**:
+    - Validates input (Anti-bot check via hidden field).
+    - Checks `remaining_slots`.
+    - Creates `Order` (Pending).
+    - Creates `Payment` (Pending).
+    - Dispatches `OrderConfirmationMail` to Queue.
+3. **System** redirects to Home with Success Flash.
 
-### Google OAuth Flow
+### 2. Admin Processing Flow
 
-```
-┌────────┐   /auth/google    ┌──────────────┐   redirect   ┌────────┐
-│ Client │ ────────────────► │ GoogleAuth   │ ───────────► │ Google │
-└────────┘                   │ Controller   │              │ OAuth  │
-                             └──────────────┘              └───┬────┘
-                                    ▲                          │
-                                    │ callback                 │
-                                    └──────────────────────────┘
-                                              │
-                                    ┌─────────▼─────────┐
-                                    │ Find/Create User  │
-                                    │ (by google_id)    │
-                                    └─────────┬─────────┘
-                                              │
-                                    ┌─────────▼─────────┐
-                                    │ Auth::login()     │
-                                    └───────────────────┘
-```
+1. **Admin** views Order Detail.
+2. **Admin** updates Status (`PENDING` -> `CONFIRMED`).
+3. **Admin** updates Payment (Manual Transaction ID entry).
 
-### Admin Authorization
+### 3. Search & Filter Flow
 
-```
-Request → AdminAuthMiddleware
-              │
-              ├── Not authenticated? → Redirect /login
-              │
-              ├── Auth but role != admin? → Abort 403
-              │
-              └── Auth + admin role → Continue to Controller
-```
+- **Client Side**: Alpine.js watches inputs.
+- **AJAX**: Calls `/du-lich` with query params (`price_from`, `category`, `sort`).
+- **Controller**: Returns JSON with rendered Blade partial (`client.tours.partials.tour_list`).
+- **Client Side**: Appends HTML to DOM.
 
-## API Structure
+## Security & Middleware
 
-### Public Endpoints
+| Middleware            | Route         | Function                                                      |
+| --------------------- | ------------- | ------------------------------------------------------------- |
+| `AdminAuthMiddleware` | `/admin/*`    | Enforces Auth check AND `role === 'admin'`.                   |
+| `throttle:2,1`        | `/dat-tour`   | Prevents booking spam (2 requests/min).                       |
+| `CustomCKFinderAuth`  | `/ckfinder/*` | **DEV ONLY**: Always returns true. Needs replacement in Prod. |
 
-| Method | Endpoint | Purpose |
-|--------|----------|---------|
-| GET | `/api/search` | Tour search |
-| GET | `/api/filter` | Tour filter |
-| GET | `/du-lich` | Tour listing |
-| GET | `/du-lich/{slug}` | Tour detail |
-| GET | `/tin-tuc` | News listing |
+## File Management Architecture
 
-### Protected Endpoints (Client)
-
-| Method | Endpoint | Auth | Purpose |
-|--------|----------|------|---------|
-| POST | `/dat-tour` | ✓ | Create booking |
-| GET | `/tai-khoan` | ✓ | User profile |
-| GET | `/lich-su-dat-tour` | ✓ | Booking history |
-| POST | `/huy-dat-tour/{id}` | ✓ | Cancel order |
-
-### Admin Endpoints
-
-| Method | Endpoint | Purpose |
-|--------|----------|---------|
-| GET | `/admin` | Dashboard |
-| GET | `/admin/tours` | Tour list |
-| POST | `/admin/tours` | Create tour |
-| PUT | `/admin/tours/{id}` | Update tour |
-| DELETE | `/admin/tours/{id}` | Delete tour |
-| POST | `/admin/orders/{id}/status` | Update order status |
-
-## Request/Response Flow
-
-### Booking Flow
-
-```
-1. User browses /du-lich
-   └─► ClientTourController@index → Tour list view
-
-2. User views /du-lich/{slug}
-   └─► ClientTourController@show → Tour detail view
-
-3. User submits booking
-   └─► ClientCheckoutController@store
-       ├─► Validate input (rate limit: 2/min)
-       ├─► Create Order (status: PENDING)
-       ├─► Create Payment (status: PENDING)
-       ├─► Queue OrderConfirmationMail
-       └─► Redirect with success message
-
-4. Admin confirms order
-   └─► AdminOrderController@updateStatus
-       └─► Update Order (status: CONFIRMED)
-```
-
-## Middleware Stack
-
-```
-Global Middleware
-    │
-    ├── TrackVisitorsMiddleware (client routes)
-    │       └── Log IP, User-Agent, URL
-    │
-    ├── Web Middleware Group
-    │       ├── EncryptCookies
-    │       ├── Session
-    │       ├── VerifyCsrfToken
-    │       └── SubstituteBindings
-    │
-    ├── Auth Middleware (protected routes)
-    │
-    └── AdminAuthMiddleware (admin routes)
-            └── Check auth + role=admin
-```
-
-## Email Queue Architecture
-
-```
-┌──────────────┐    dispatch    ┌─────────────┐    process    ┌──────────┐
-│ Controller   │ ─────────────► │ Queue (DB)  │ ─────────────► │ Mail     │
-│              │                │             │                │ Driver   │
-└──────────────┘                └─────────────┘                └──────────┘
-                                      │
-                                      ▼
-                              ┌───────────────┐
-                              │ jobs table    │
-                              └───────────────┘
-
-Mailable Classes:
-├── OrderConfirmationMail (ShouldQueue)
-├── ResetPasswordMail (ShouldQueue)
-└── VerifyEmail (ShouldQueue)
-```
-
----
-
-## Unresolved Questions
-
-1. **Payment Gateway**: No external payment integration visible - manual confirmation only?
-2. **Slot Decrement**: When/how does `remaining_slots` decrease after booking?
-3. **CKFinder Security**: Auth middleware always returns true - production risk
-4. **API Authentication**: Empty API controller - future JWT/Sanctum implementation?
-5. **Caching Strategy**: No Redis/cache implementation visible for high-traffic pages
+- Images are stored in `public/userfiles`.
+- Paths in DB are relative (e.g., `/userfiles/images/tour1.jpg`).
+- Admin uses `x-admin.inputs.image-link` to trigger CKFinder popup and return URL to input field.

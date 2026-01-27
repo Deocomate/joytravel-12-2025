@@ -10,6 +10,6 @@ class ClientAboutController extends Controller
     public function index(): View
     {
         // Static data is now defined in the blade template
-        return view('client.pages.about.index');
+        return view('client.about.index');
     }
 }

@@ -13,7 +13,7 @@ class ClientContactController extends Controller
     public function index(): View
     {
         // Static data is now defined in the blade template
-        return view('client.pages.contact.index');
+        return view('client.contact.index');
     }
 
     public function store(Request $request): RedirectResponse

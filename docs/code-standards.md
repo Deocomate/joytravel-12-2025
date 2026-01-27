@@ -1,247 +1,85 @@
 # Code Standards - King Express Travel
 
-## Language & Comments
+## 1. Naming Conventions
 
-- **Code**: English (PHP/Laravel conventions)
-- **Comments**: Vietnamese allowed for business logic explanations
-- **Documentation**: English
+| Entity               | Rule                                  | Example                                              |
+| -------------------- | ------------------------------------- | ---------------------------------------------------- |
+| **Controllers**      | `Namespace` + `Entity` + `Controller` | `AdminTourController`, `ClientNewsController`        |
+| **Views (Admin)**    | Resource based                        | `resources/views/admin/tours/createOrEdit.blade.php` |
+| **Views (Client)**   | Feature based                         | `resources/views/client/profile/index.blade.php`     |
+| **Routes**           | Named Routes (dotted)                 | `admin.tours.index`, `client.checkout.store`         |
+| **Blade Components** | `x-{namespace}.{group}.{name}`        | `<x-admin.inputs.text />`, `<x-client.tour-card />`  |
 
-## Naming Conventions
+## 2. Admin Development (AdminLTE)
 
-### Controllers
+### Forms
 
-| Pattern | Example |
-|---------|---------|
-| Admin controllers | `Admin{Entity}Controller` |
-| Client controllers | `Client{Entity}Controller` |
-| Resource methods | index, create, store, show, edit, update, destroy |
-
-```php
-// ✓ Good
-class AdminTourController extends Controller
-class ClientCheckoutController extends Controller
-
-// ✗ Bad
-class TourAdminController extends Controller
-class CheckoutCtrl extends Controller
-```
-
-### Models
-
-| Element | Convention | Example |
-|---------|------------|---------|
-| Class name | Singular, PascalCase | `Tour`, `Category` |
-| Table name | Plural, snake_case | `tours`, `categories` |
-| Pivot tables | Alphabetical order | `tour_categories` |
-| Foreign keys | `{model}_id` | `user_id`, `tour_id` |
-
-### Routes
-
-| Type | Pattern | Example |
-|------|---------|---------|
-| Vietnamese slugs | SEO-friendly | `/du-lich`, `/tin-tuc` |
-| Admin routes | English | `/admin/tours`, `/admin/orders` |
-| API routes | RESTful | `/api/search`, `/api/filter` |
-
-## Code Patterns
-
-### Controller Structure
-
-```php
-class AdminTourController extends Controller
-{
-    // 1. List/Index
-    public function index() { }
-
-    // 2. Create form
-    public function create() { }
-
-    // 3. Store new record
-    public function store(Request $request) { }
-
-    // 4. Edit form
-    public function edit($id) { }
-
-    // 5. Update record
-    public function update(Request $request, $id) { }
-
-    // 6. Delete record
-    public function destroy($id) { }
-}
-```
-
-### Model Conventions
-
-```php
-class Tour extends Model
-{
-    // 1. Traits
-    use HasFactory;
-
-    // 2. Constants
-    const STATUS_ACTIVE = 'active';
-
-    // 3. Properties
-    protected $fillable = [...];
-    protected $casts = [...];
-
-    // 4. Relationships
-    public function categories() { }
-    public function destinations() { }
-
-    // 5. Scopes
-    public function scopeActive($query) { }
-
-    // 6. Accessors/Mutators
-    public function getPriceFormattedAttribute() { }
-}
-```
-
-### Status Constants Pattern
-
-```php
-// In Model
-class Order extends Model
-{
-    const STATUS_PENDING = 'pending';
-    const STATUS_CONFIRMED = 'confirmed';
-    const STATUS_COMPLETED = 'completed';
-    const STATUS_CANCELLED = 'cancelled';
-}
-
-// Usage
-Order::where('status', Order::STATUS_PENDING)->get();
-```
-
-## Blade Components
-
-### Input Component Pattern
-
-```php
-// Component class
-class Text extends Component
-{
-    public function __construct(
-        public string $name,
-        public string $label,
-        public ?string $value = null,
-        public bool $required = false
-    ) {}
-}
-```
+**ALWAYS** use the dedicated Blade components in `resources/views/components/admin/inputs/`. Do not write raw HTML inputs.
 
 ```blade
-{{-- Usage --}}
-<x-admin.input.text
-    name="tour_name"
-    label="Tên tour"
-    :value="$tour->name"
-    required
-/>
+<!-- Correct -->
+<x-admin.inputs.text label="Tên tour" name="name" :value="$tour->name" required />
+<x-admin.inputs.editor label="Mô tả" name="description" :value="$tour->description" />
+
+<!-- Incorrect -->
+<div class="form-group">
+    <input type="text" name="name">
+</div>
 ```
 
-## Database Standards
+### Javascript
 
-### Migration Naming
+- Push scripts to the stack: `@push('scripts') ... @endpush`.
+- Use jQuery (bundled with AdminLTE) for DOM manipulation in Admin.
 
-```
-{timestamp}_create_{table}_table.php
-{timestamp}_add_{column}_to_{table}_table.php
-{timestamp}_create_{table1}_{table2}_table.php  // Pivots
-```
+## 3. Client Development (Tailwind + Alpine)
 
-### Column Conventions
+### Styling
 
-| Type | Convention |
-|------|------------|
-| Primary key | `id` (auto) |
-| Foreign key | `{model}_id` |
-| Boolean | `is_{adjective}` (is_active, is_featured) |
-| Timestamps | `created_at`, `updated_at` |
-| Soft delete | `deleted_at` |
-| Status | ENUM or string constants |
+- Use **Tailwind CSS** classes exclusively.
+- Define colors in `tailwind.config` script within `app.blade.php` (e.g., `var(--color-primary)`).
+- **Do not** use Bootstrap classes in Client views.
 
-### JSON Columns
+### Interactivity
+
+- Use **Alpine.js** for:
+    - Dropdowns (`x-data="{ open: false }"`)
+    - Modals
+    - Search toggles
+    - Mobile menu
+- Use **AJAX** for filtering lists (Tours/News). Controller should return JSON `{ html: '...' }`.
+
+## 4. Model & Database Patterns
+
+### JSON Casting
+
+Models utilizing JSON columns (`tours` table) must cast attributes:
 
 ```php
-// Migration
-$table->json('images')->nullable();
-$table->json('schedule')->nullable();
-
-// Model cast
 protected $casts = [
     'images' => 'array',
-    'schedule' => 'array',
+    'tour_schedule' => 'array',
+    'is_active' => 'boolean',
 ];
 ```
 
-## View Organization
+### Slugs
 
-```
-resources/views/
-├── admin/
-│   ├── layouts/
-│   │   └── app.blade.php       # Admin layout
-│   ├── tours/
-│   │   ├── index.blade.php
-│   │   ├── create.blade.php
-│   │   └── edit.blade.php
-│   └── partials/
-├── client/
-│   ├── layouts/
-│   │   └── app.blade.php       # Client layout
-│   ├── pages/
-│   └── partials/
-└── components/
-    ├── admin/input/            # Admin form components
-    └── client/                 # Client UI components
-```
+- Generate slugs manually in Controller using `Str::slug()`.
+- Implement a `while` loop to ensure uniqueness (e.g., appending `-1`, `-2`).
 
-## Route Grouping
+## 5. Controller Logic
+
+### Validation
+
+- Validate **all** incoming requests.
+- Use `after_or_equal:today` for dates.
+- Use `Rule::in([...])` for Enums.
+
+### Dependency Injection
+
+- Use Route Model Binding where possible:
 
 ```php
-// Admin routes
-Route::prefix('admin')
-    ->middleware(['auth', AdminAuthMiddleware::class])
-    ->group(function () {
-        // Protected admin routes
-    });
-
-// Client auth routes
-Route::middleware('auth')
-    ->group(function () {
-        // Authenticated client routes
-    });
-
-// Public routes
-Route::get('/du-lich', [ClientTourController::class, 'index']);
+public function edit(Tour $tour) { ... }
 ```
-
-## Error Handling
-
-```php
-// Controller validation
-$request->validate([
-    'email' => 'required|email|unique:users',
-    'password' => 'required|min:8',
-]);
-
-// Try-catch for external services
-try {
-    Mail::to($user)->queue(new OrderConfirmationMail($order));
-} catch (\Exception $e) {
-    Log::error('Email failed: ' . $e->getMessage());
-}
-```
-
----
-
-## Anti-Patterns to Avoid
-
-| ✗ Don't | ✓ Do Instead |
-|---------|--------------|
-| Raw SQL queries | Eloquent ORM |
-| Hardcoded strings | Constants/config |
-| Logic in views | Controllers/Services |
-| Inline styles | Tailwind/CSS classes |
-| Direct file uploads | CKFinder integration |

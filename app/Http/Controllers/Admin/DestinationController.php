@@ -21,12 +21,12 @@ class DestinationController extends Controller
 
         $destinations = $query->orderBy('name')->paginate(15)->withQueryString();
 
-        return view('admin.modules.destinations.index', compact('destinations'));
+        return view('admin.destinations.index', compact('destinations'));
     }
 
     public function create(): View
     {
-        return view('admin.modules.destinations.createOrEdit');
+        return view('admin.destinations.createOrEdit');
     }
 
     public function store(Request $request): RedirectResponse
@@ -44,7 +44,7 @@ class DestinationController extends Controller
 
     public function edit(Destination $destination): View
     {
-        return view('admin.modules.destinations.createOrEdit', compact('destination'));
+        return view('admin.destinations.createOrEdit', compact('destination'));
     }
 
     public function update(Request $request, Destination $destination): RedirectResponse

@@ -30,12 +30,12 @@ class UserController extends Controller
 
         $users = $query->orderByDesc('created_at')->paginate(15)->withQueryString();
 
-        return view('admin.modules.users.index', compact('users'));
+        return view('admin.users.index', compact('users'));
     }
 
     public function create(): View
     {
-        return view('admin.modules.users.createOrEdit');
+        return view('admin.users.createOrEdit');
     }
 
     public function store(Request $request): RedirectResponse
@@ -59,12 +59,12 @@ class UserController extends Controller
 
     public function show(User $user): View
     {
-        return view('admin.modules.users.show', compact('user'));
+        return view('admin.users.show', compact('user'));
     }
 
     public function edit(User $user): View
     {
-        return view('admin.modules.users.createOrEdit', compact('user'));
+        return view('admin.users.createOrEdit', compact('user'));
     }
 
     public function update(Request $request, User $user): RedirectResponse
@@ -95,6 +95,10 @@ class UserController extends Controller
     {
         if ($user->id === auth()->id()) {
             return back()->with('error', 'Bạn không thể xóa chính tài khoản của mình.');
+        }
+
+        if ($user->email === 'root@gmail.com') {
+            return back()->with('error', 'Không thể xóa tài khoản Super Admin (Root).');
         }
 
         $user->delete();

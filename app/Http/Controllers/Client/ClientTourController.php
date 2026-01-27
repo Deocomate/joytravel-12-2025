@@ -75,7 +75,7 @@ class ClientTourController extends Controller
         $tours = $query->orderBy('priority')->paginate(12)->withQueryString();
 
         if ($request->ajax()) {
-            $html = view('client.pages.tours.partials.tour_list', compact('tours'))->render();
+            $html = view('client.tours.partials.tour_list', compact('tours'))->render();
             return response()->json([
                 'html' => $html,
                 'next_page_url' => $tours->hasMorePages() ? $tours->nextPageUrl() : null,
@@ -85,15 +85,17 @@ class ClientTourController extends Controller
         $categories = Category::where('type', 'TOUR')
             ->whereNull('parent_id')
             ->where('is_active', true)
-            ->with(['children' => function ($query) {
-                $query->where('is_active', true)->orderBy('priority');
-            }])
+            ->with([
+                'children' => function ($query) {
+                    $query->where('is_active', true)->orderBy('priority');
+                }
+            ])
             ->orderBy('priority')
             ->get();
 
         $destinations = Destination::all();
 
-        return view('client.pages.tours.index', compact('tours', 'categories', 'destinations', 'selectedCategorySlug', 'selectedDestination', 'selectedCategory'));
+        return view('client.tours.index', compact('tours', 'categories', 'destinations', 'selectedCategorySlug', 'selectedDestination', 'selectedCategory'));
     }
 
     public function show(Tour $tour): View
@@ -109,7 +111,7 @@ class ClientTourController extends Controller
             ->limit(8)
             ->get();
 
-        return view('client.pages.tours.show', compact('tour', 'relatedTours'));
+        return view('client.tours.show', compact('tour', 'relatedTours'));
     }
 
     public function getSearchSuggestions(Request $request): JsonResponse

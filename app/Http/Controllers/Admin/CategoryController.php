@@ -26,20 +26,40 @@ class CategoryController extends Controller
         $categories = $query->orderBy('priority')->get()->toArray();
         $categoryTree = Category::buildTree($categories);
 
-        return view('admin.modules.categories.index', compact('categoryTree', 'selectedType'));
+        return view('admin.categories.index', compact('categoryTree', 'selectedType'));
     }
 
     public function create(): View
     {
         $parentCategories = Category::all();
-        return view('admin.modules.categories.createOrEdit', compact('parentCategories'));
+        return view('admin.categories.createOrEdit', compact('parentCategories'));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $validatedData = $this->validateRequest($request);
-        $validatedData['slug'] = Str::slug($validatedData['name']);
+        // Inline Validation
+        $validatedData = $request->validate([
+            'name' => 'required|string',
+            'thumbnail' => 'nullable|string',
+            'priority' => 'nullable|integer',
+            'is_active' => 'required|boolean',
+            'parent_id' => 'nullable|exists:categories,id',
+            'type' => [
+                'required',
+                Rule::in(['TOUR', 'NEWS']),
+                function ($attribute, $value, $fail) use ($request) {
+                    $parentId = $request->input('parent_id');
+                    if ($parentId) {
+                        $parent = Category::find($parentId);
+                        if ($parent && $parent->type !== $value) {
+                            $fail('Loại danh mục phải trùng với loại của danh mục cha.');
+                        }
+                    }
+                },
+            ],
+        ]);
 
+        $validatedData['slug'] = Str::slug($validatedData['name']);
         $originalSlug = $validatedData['slug'];
         $counter = 1;
         while (Category::where('slug', $validatedData['slug'])->exists()) {
@@ -54,14 +74,34 @@ class CategoryController extends Controller
     public function edit(Category $category): View
     {
         $parentCategories = Category::where('id', '!=', $category->id)->get();
-        return view('admin.modules.categories.createOrEdit', compact('category', 'parentCategories'));
+        return view('admin.categories.createOrEdit', compact('category', 'parentCategories'));
     }
 
     public function update(Request $request, Category $category): RedirectResponse
     {
-        $validatedData = $this->validateRequest($request);
-        $validatedData['slug'] = Str::slug($validatedData['name']);
+        // Inline Validation
+        $validatedData = $request->validate([
+            'name' => 'required|string',
+            'thumbnail' => 'nullable|string',
+            'priority' => 'nullable|integer',
+            'is_active' => 'required|boolean',
+            'parent_id' => 'nullable|exists:categories,id',
+            'type' => [
+                'required',
+                Rule::in(['TOUR', 'NEWS']),
+                function ($attribute, $value, $fail) use ($request) {
+                    $parentId = $request->input('parent_id');
+                    if ($parentId) {
+                        $parent = Category::find($parentId);
+                        if ($parent && $parent->type !== $value) {
+                            $fail('Loại danh mục phải trùng với loại của danh mục cha.');
+                        }
+                    }
+                },
+            ],
+        ]);
 
+        $validatedData['slug'] = Str::slug($validatedData['name']);
         if ($validatedData['slug'] !== $category->slug) {
             $originalSlug = $validatedData['slug'];
             $counter = 1;
@@ -86,30 +126,6 @@ class CategoryController extends Controller
         return redirect()->route('admin.categories.index')->with('success', 'Xóa danh mục và các mục con thành công.');
     }
 
-    private function validateRequest(Request $request): array
-    {
-        return $request->validate([
-            'name' => 'required|string',
-            'thumbnail' => 'nullable|string',
-            'priority' => 'nullable|integer',
-            'is_active' => 'required|boolean',
-            'parent_id' => 'nullable|exists:categories,id',
-            'type' => [
-                'required',
-                Rule::in(['TOUR', 'NEWS']),
-                function ($attribute, $value, $fail) use ($request) {
-                    $parentId = $request->input('parent_id');
-                    if ($parentId) {
-                        $parent = Category::find($parentId);
-                        if ($parent && $parent->type !== $value) {
-                            $fail('Loại danh mục phải trùng với loại của danh mục cha.');
-                        }
-                    }
-                },
-            ],
-        ]);
-    }
-
     public function updateOrder(Request $request): JsonResponse
     {
         $request->validate([
@@ -122,6 +138,7 @@ class CategoryController extends Controller
             DB::transaction(function () use ($categoryData) {
                 $this->saveOrderRecursive($categoryData);
             });
+
             return response()->json(['success' => true, 'message' => 'Thứ tự danh mục đã được cập nhật.']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Đã xảy ra lỗi: ' . $e->getMessage()], 500);
@@ -131,8 +148,8 @@ class CategoryController extends Controller
     private function saveOrderRecursive(array $categoryItems, int $parentId = null): void
     {
         foreach ($categoryItems as $index => $item) {
-            if (!isset($item['id'])) continue;
-
+            if (!isset($item['id']))
+                continue;
             Category::where('id', $item['id'])->update([
                 'priority' => $index,
                 'parent_id' => $parentId,
@@ -155,8 +172,7 @@ class CategoryController extends Controller
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
-
-        return view('admin.modules.categories.add-to-tour', compact('tourCategories'));
+        return view('admin.categories.add-to-tour', compact('tourCategories'));
     }
 
     /**
@@ -167,9 +183,9 @@ class CategoryController extends Controller
     public function handleAddToTour(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'category_ids'   => 'required|array|min:1',
+            'category_ids' => 'required|array|min:1',
             'category_ids.*' => 'exists:categories,id',
-            'tour_name'      => 'required|string|min:1',
+            'tour_name' => 'required|string|min:1',
         ], [
             'category_ids.required' => 'Vui lòng chọn ít nhất một danh mục.',
             'tour_name.required' => 'Vui lòng nhập từ khóa tên tour.',
@@ -180,8 +196,8 @@ class CategoryController extends Controller
 
         // Find tours using Query Builder as per instructions
         $toursToUpdate = DB::table('tours')
-                            ->where('name', 'like', '%' . $tourNameKeyword . '%')
-                            ->pluck('id');
+            ->where('name', 'like', '%' . $tourNameKeyword . '%')
+            ->pluck('id');
 
         if ($toursToUpdate->isEmpty()) {
             return back()->withInput()->with('warning', 'Không tìm thấy tour nào có tên chứa "' . $tourNameKeyword . '".');
@@ -190,11 +206,11 @@ class CategoryController extends Controller
         // Prepare data for insertion
         $dataToInsert = [];
         $existingRelations = DB::table('tour_categories')
-                                ->whereIn('tour_id', $toursToUpdate)
-                                ->whereIn('category_id', $categoryIds)
-                                ->get(['tour_id', 'category_id'])
-                                ->map(fn($item) => $item->tour_id . '-' . $item->category_id)
-                                ->flip(); // Create a hash map for quick lookups
+            ->whereIn('tour_id', $toursToUpdate)
+            ->whereIn('category_id', $categoryIds)
+            ->get(['tour_id', 'category_id'])
+            ->map(fn($item) => $item->tour_id . '-' . $item->category_id)
+            ->flip(); // Create a hash map for quick lookups
 
         foreach ($toursToUpdate as $tourId) {
             foreach ($categoryIds as $categoryId) {
@@ -218,6 +234,6 @@ class CategoryController extends Controller
         $categoryNames = DB::table('categories')->whereIn('id', $categoryIds)->pluck('name')->implode(', ');
 
         return redirect()->route('admin.categories.add-to-tour.create')
-                         ->with('success', "Đã thêm danh mục ({$categoryNames}) cho {$countTours} tour. Có {$countAdded} liên kết mới được tạo.");
+            ->with('success', "Đã thêm danh mục ({$categoryNames}) cho {$countTours} tour. Có {$countAdded} liên kết mới được tạo.");
     }
 }

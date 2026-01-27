@@ -44,76 +44,22 @@ class TourController extends Controller
         $categories = Category::where('type', 'TOUR')->get();
         $destinations = Destination::all();
 
-        return view('admin.modules.tours.index', compact('tours', 'categories', 'destinations'));
+        return view('admin.tours.index', compact('tours', 'categories', 'destinations'));
     }
 
     public function create(): View
     {
         $categories = Category::where('type', 'TOUR')->get();
         $destinations = Destination::all();
-        return view('admin.modules.tours.createOrEdit', compact('categories', 'destinations'));
+        return view('admin.tours.createOrEdit', compact('categories', 'destinations'));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $validatedData = $this->validateRequest($request);
-        $validatedData['slug'] = $this->generateUniqueSlug($validatedData['name']);
-
-        $tour = Tour::create($validatedData);
-        $tour->categories()->sync($request->input('category_ids', []));
-
-        $destinationsData = [];
-        if ($request->has('destination_ids')) {
-            foreach ($request->input('destination_ids') as $index => $destinationId) {
-                $destinationsData[$destinationId] = ['position' => $index + 1];
-            }
-        }
-        $tour->destinations()->sync($destinationsData);
-
-
-        return redirect()->route('admin.tours.index')->with('success', 'Tạo mới tour thành công.');
-    }
-
-    public function edit(Tour $tour): View
-    {
-        $categories = Category::where('type', 'TOUR')->get();
-        $destinations = Destination::all();
-        $tour->load(['categories', 'destinations']);
-        return view('admin.modules.tours.createOrEdit', compact('tour', 'categories', 'destinations'));
-    }
-
-    public function update(Request $request, Tour $tour): RedirectResponse
-    {
-        $validatedData = $this->validateRequest($request, $tour->id);
-        if ($validatedData['name'] !== $tour->name) {
-            $validatedData['slug'] = $this->generateUniqueSlug($validatedData['name'], $tour->id);
-        }
-
-        $tour->update($validatedData);
-        $tour->categories()->sync($request->input('category_ids', []));
-
-        $destinationsData = [];
-        if ($request->has('destination_ids')) {
-            foreach ($request->input('destination_ids') as $index => $destinationId) {
-                $destinationsData[$destinationId] = ['position' => $index + 1];
-            }
-        }
-        $tour->destinations()->sync($destinationsData);
-
-        return redirect()->route('admin.tours.index')->with('success', 'Cập nhật tour thành công.');
-    }
-
-    public function destroy(Tour $tour): RedirectResponse
-    {
-        $tour->delete();
-        return redirect()->route('admin.tours.index')->with('success', 'Xóa tour thành công.');
-    }
-
-    private function validateRequest(Request $request, int $exceptId = null): array
-    {
-        $rules = [
+        // Inline Validation cho STORE (không cần exceptId)
+        $validatedData = $request->validate([
             'name' => 'required|string|max:255',
-            'tour_code' => 'required|string|max:50|unique:tours,tour_code' . ($exceptId ? ',' . $exceptId : ''),
+            'tour_code' => 'required|string|max:50|unique:tours,tour_code',
             'duration' => 'nullable|string|max:2000',
             'departure_point' => 'nullable|string|max:2000',
             'remaining_slots' => 'nullable|integer|min:0',
@@ -137,9 +83,85 @@ class TourController extends Controller
             'category_ids.*' => 'exists:categories,id',
             'destination_ids' => 'nullable|array',
             'destination_ids.*' => 'exists:destinations,id',
-        ];
+        ]);
 
-        return $request->validate($rules);
+        $validatedData['slug'] = $this->generateUniqueSlug($validatedData['name']);
+
+        $tour = Tour::create($validatedData);
+        $tour->categories()->sync($request->input('category_ids', []));
+
+        $destinationsData = [];
+        if ($request->has('destination_ids')) {
+            foreach ($request->input('destination_ids') as $index => $destinationId) {
+                $destinationsData[$destinationId] = ['position' => $index + 1];
+            }
+        }
+        $tour->destinations()->sync($destinationsData);
+
+        return redirect()->route('admin.tours.index')->with('success', 'Tạo mới tour thành công.');
+    }
+
+    public function edit(Tour $tour): View
+    {
+        $categories = Category::where('type', 'TOUR')->get();
+        $destinations = Destination::all();
+        $tour->load(['categories', 'destinations']);
+        return view('admin.tours.createOrEdit', compact('tour', 'categories', 'destinations'));
+    }
+
+    public function update(Request $request, Tour $tour): RedirectResponse
+    {
+        // Inline Validation cho UPDATE (ngoại trừ ID hiện tại)
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'tour_code' => 'required|string|max:50|unique:tours,tour_code,' . $tour->id,
+            'duration' => 'nullable|string|max:2000',
+            'departure_point' => 'nullable|string|max:2000',
+            'remaining_slots' => 'nullable|integer|min:0',
+            'price_adult' => 'nullable|integer|min:0',
+            'price_child' => 'nullable|integer|min:0',
+            'price_toddler' => 'nullable|integer|min:0',
+            'price_infant' => 'nullable|integer|min:0',
+            'transport_mode' => 'nullable|string|max:2000',
+            'thumbnail' => 'nullable|string|max:2000',
+            'priority' => 'nullable|integer',
+            'short_description' => 'nullable|string',
+            'tour_description' => 'nullable|string',
+            'tour_schedule' => 'nullable|array',
+            'tour_schedule.*.title' => 'nullable|string|max:2000',
+            'tour_schedule.*.content' => 'nullable|string',
+            'images' => 'nullable|array',
+            'services_note' => 'nullable|string',
+            'note' => 'nullable|string',
+            'characteristic' => 'nullable|string',
+            'category_ids' => 'nullable|array',
+            'category_ids.*' => 'exists:categories,id',
+            'destination_ids' => 'nullable|array',
+            'destination_ids.*' => 'exists:destinations,id',
+        ]);
+
+        if ($validatedData['name'] !== $tour->name) {
+            $validatedData['slug'] = $this->generateUniqueSlug($validatedData['name'], $tour->id);
+        }
+
+        $tour->update($validatedData);
+        $tour->categories()->sync($request->input('category_ids', []));
+
+        $destinationsData = [];
+        if ($request->has('destination_ids')) {
+            foreach ($request->input('destination_ids') as $index => $destinationId) {
+                $destinationsData[$destinationId] = ['position' => $index + 1];
+            }
+        }
+        $tour->destinations()->sync($destinationsData);
+
+        return redirect()->route('admin.tours.index')->with('success', 'Cập nhật tour thành công.');
+    }
+
+    public function destroy(Tour $tour): RedirectResponse
+    {
+        $tour->delete();
+        return redirect()->route('admin.tours.index')->with('success', 'Xóa tour thành công.');
     }
 
     private function generateUniqueSlug(string $name, ?int $exceptId = null): string

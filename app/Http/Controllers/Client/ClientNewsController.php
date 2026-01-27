@@ -30,7 +30,7 @@ class ClientNewsController extends Controller
         $newsItems = $query->orderByDesc('created_at')->paginate(10)->withQueryString();
 
         if ($request->ajax()) {
-            $html = view('client.pages.news.partials.news_list', compact('newsItems'))->render();
+            $html = view('client.news.partials.news_list', compact('newsItems'))->render();
             return response()->json([
                 'html' => $html,
                 'next_page_url' => $newsItems->hasMorePages() ? $newsItems->nextPageUrl() : null,
@@ -39,7 +39,7 @@ class ClientNewsController extends Controller
 
         $categories = Category::where('type', 'NEWS')->where('is_active', true)->orderBy('priority')->get();
 
-        return view('client.pages.news.index', compact('newsItems', 'categories', 'selectedCategorySlug', 'searchQuery'));
+        return view('client.news.index', compact('newsItems', 'categories', 'selectedCategorySlug', 'searchQuery'));
     }
 
     public function show(News $news): View
@@ -60,6 +60,6 @@ class ClientNewsController extends Controller
             ->limit(5)
             ->get();
 
-        return view('client.pages.news.show', compact('news', 'relatedNews', 'latestNews'));
+        return view('client.news.show', compact('news', 'relatedNews', 'latestNews'));
     }
 }

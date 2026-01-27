@@ -7,6 +7,41 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        // 1. Cập nhật bảng Users (Merge từ update_users_table và add_google_id)
+        if (Schema::hasTable('users')) {
+            Schema::table('users', function (Blueprint $table) {
+                // Thêm google_id và đổi password thành nullable (từ 2025_08_28)
+                if (!Schema::hasColumn('users', 'google_id')) {
+                    $table->string('google_id')->nullable()->after('id');
+                }
+                $table->string('password')->nullable()->change();
+
+                // Thêm các trường thông tin cá nhân (từ 2025_08_15_094240)
+                if (!Schema::hasColumn('users', 'role')) {
+                    // Dự phòng nếu cột role chưa tồn tại (tùy thuộc vào migration gốc của users)
+                    // $table->string('role')->default('USER')->after('email');
+                }
+
+                $columns = ['address', 'phone', 'avatar', 'account_type'];
+                foreach ($columns as $col) {
+                    if (Schema::hasColumn('users', $col)) {
+                        continue;
+                    }
+                    if ($col === 'address')
+                        $table->string('address', 2000)->nullable();
+                    if ($col === 'phone')
+                        $table->string('phone', 2000)->nullable();
+                    if ($col === 'avatar')
+                        $table->string('avatar', 2000)->nullable();
+                    if ($col === 'account_type')
+                        $table->enum('account_type', ['LOCAL', 'GOOGLE'])->default('LOCAL');
+                }
+            });
+        }
+
+
+
+        // 3. Tạo các bảng Core System
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
             $table->string('name', 2000)->nullable();
@@ -80,6 +115,7 @@ return new class extends Migration {
             $table->primary(['tour_id', 'destination_id']);
         });
 
+        // 4. Tạo bảng Orders (Đã gộp departure_date và cancellation_reason)
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
@@ -87,7 +123,11 @@ return new class extends Migration {
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
             $table->string('address', 1000)->nullable();
+
             $table->foreignId('tour_id')->constrained('tours')->onDelete('cascade');
+            // Merge từ 2025_08_18_122204
+            $table->date('departure_date')->nullable();
+
             $table->integer('adult_quantity')->default(1);
             $table->integer('child_quantity')->default(0);
             $table->integer('toddler_quantity')->default(0);
@@ -95,6 +135,10 @@ return new class extends Migration {
             $table->integer('total_price')->nullable();
             $table->enum('status', ['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'])->default('PENDING');
             $table->longText('note')->nullable();
+
+            // Merge từ 2025_08_23_125646
+            $table->text('cancellation_reason')->nullable();
+
             $table->timestamps();
         });
 
@@ -153,6 +197,7 @@ return new class extends Migration {
 
     public function down(): void
     {
+        // Drop tables
         Schema::dropIfExists('customer_cares');
         Schema::dropIfExists('about_us');
         Schema::dropIfExists('contact_branches');
@@ -165,5 +210,17 @@ return new class extends Migration {
         Schema::dropIfExists('tours');
         Schema::dropIfExists('news');
         Schema::dropIfExists('categories');
+
+
+        // Revert Users table changes
+        if (Schema::hasTable('users')) {
+            Schema::table('users', function (Blueprint $table) {
+                $columnsToDrop = ['google_id', 'address', 'phone', 'avatar', 'account_type'];
+                $table->dropColumn($columnsToDrop);
+                // Lưu ý: Không thể revert chính xác password nullable nếu không biết trạng thái trước đó,
+                // nhưng thường mặc định là not null.
+                $table->string('password')->nullable(false)->change();
+            });
+        }
     }
 };

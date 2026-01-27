@@ -21,10 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'ckCsrfToken',
         ]);
 
-        // Thêm middleware theo dõi lượt truy cập vào nhóm 'web'
-        $middleware->web(append: [
-            \App\Http\Middleware\TrackVisitorsMiddleware::class,
-        ]);
+
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

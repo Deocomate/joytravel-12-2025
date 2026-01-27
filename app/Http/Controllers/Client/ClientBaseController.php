@@ -82,7 +82,7 @@ class ClientBaseController extends Controller
         // Contact info
         $contactInfo = Contact::with('branches')->first();
 
-        return view('client.pages.home', compact(
+        return view('client.home', compact(
             'banners',
             'featuredTours',
             'popularDestinations',

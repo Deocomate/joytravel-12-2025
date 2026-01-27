@@ -12,7 +12,8 @@
     if ($isHero) {
         $wrapperClasses = 'w-full hidden md:block';
     } elseif ($isOverlay) {
-        $wrapperClasses = 'hidden md:block absolute left-1/2 bottom-0 translate-y-1/2 -translate-x-1/2 w-full max-w-5xl px-4 z-20';
+        $wrapperClasses =
+            'hidden md:block absolute left-1/2 bottom-0 translate-y-1/2 -translate-x-1/2 w-full max-w-5xl px-4 z-20';
     } else {
         $wrapperClasses = 'block md:hidden w-full';
     }
@@ -177,120 +178,47 @@
             }
         </style>
 
-        <form id="tour-search-form-{{ $idSuffix }}" action="{{ route('client.tours') }}" method="GET"
-            class="flex flex-col md:flex-row md:items-end gap-4" role="search" aria-label="Tìm tour">
+        <div x-data="tourSearchComponent()" class="flex flex-col md:flex-row md:items-end gap-4">
 
-            <!-- Destination with Alpine.js -->
-            <div class="w-full md:flex-1" x-data="{
-                    query: '',
-                    suggestions: [],
-                    showSuggestions: false,
-                    loading: false,
-                    selectedIndex: -1,
-                    debounceTimer: null,
-
-                    async fetchSuggestions() {
-                        if (this.query.length < 2) {
-                            this.suggestions = [];
-                            this.showSuggestions = false;
-                            return;
-                        }
-
-                        this.loading = true;
-                        try {
-                            const response = await fetch(`{{ route('api.destination.suggestions') }}?q=${encodeURIComponent(this.query)}`);
-                            const data = await response.json();
-                            this.suggestions = data.slice(0, 8);
-                            this.showSuggestions = this.suggestions.length > 0;
-                            this.selectedIndex = -1;
-                        } catch (e) {
-                            console.error('Failed to fetch suggestions:', e);
-                        }
-                        this.loading = false;
-                    },
-
-                    debouncedFetch() {
-                        clearTimeout(this.debounceTimer);
-                        this.debounceTimer = setTimeout(() => this.fetchSuggestions(), 300);
-                    },
-
-                    selectSuggestion(suggestion) {
-                        this.query = suggestion.name || suggestion;
-                        this.showSuggestions = false;
-                    },
-
-                    handleKeydown(e) {
-                        if (!this.showSuggestions) return;
-
-                        if (e.key === 'ArrowDown') {
-                            e.preventDefault();
-                            this.selectedIndex = Math.min(this.selectedIndex + 1, this.suggestions.length - 1);
-                        } else if (e.key === 'ArrowUp') {
-                            e.preventDefault();
-                            this.selectedIndex = Math.max(this.selectedIndex - 1, -1);
-                        } else if (e.key === 'Enter' && this.selectedIndex >= 0) {
-                            e.preventDefault();
-                            this.selectSuggestion(this.suggestions[this.selectedIndex]);
-                        } else if (e.key === 'Escape') {
-                            this.showSuggestions = false;
-                        }
-                    }
-                 }" @click.away="showSuggestions = false">
-
-                <label for="destination-input-{{ $idSuffix }}" class="search-label">
-                    <i class="fa-solid fa-location-dot"></i>
-                    Điểm đến
-                </label>
-
+            {{-- Destination Input --}}
+            <div class="w-full md:flex-1 relative">
+                <label class="search-label"><i class="fa-solid fa-location-dot text-primary"></i> Điểm đến</label>
                 <div class="relative search-input-shell h-12 md:h-14">
-                    <i
-                        class="fa-solid fa-magnifying-glass search-input-icon absolute left-4 top-1/2 -translate-y-1/2 text-lg"></i>
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
 
-                    <input type="text" id="destination-input-{{ $idSuffix }}" name="destination" x-model="query"
-                        @input="debouncedFetch()" @keydown="handleKeydown($event)"
-                        @focus="if(suggestions.length > 0) showSuggestions = true" placeholder="Bạn muốn đi đâu?"
-                        class="search-input-field w-full h-full pl-12 pr-4 border-none focus:ring-0 text-gray-800 placeholder-gray-400 text-base font-medium rounded-xl"
+                    <input type="text" name="destination" x-model="query" @input.debounce.300ms="fetchDestinations"
+                        @keydown.arrow-down.prevent="moveDown" @keydown.arrow-up.prevent="moveUp"
+                        @keydown.enter.prevent="selectHighlight" placeholder="Bạn muốn đi đâu?"
+                        class="w-full h-full pl-12 pr-4 bg-transparent border-none focus:ring-0 text-gray-800 font-medium rounded-xl"
                         autocomplete="off">
 
-                    <!-- Loading indicator -->
-                    <div x-show="loading" class="absolute right-4 top-1/2 -translate-y-1/2">
-                        <i class="fa-solid fa-spinner fa-spin text-gray-400"></i>
-                    </div>
-
-                    <!-- Suggestions dropdown -->
-                    <div x-show="showSuggestions && suggestions.length > 0"
-                        x-transition:enter="transition ease-out duration-200"
-                        x-transition:enter-start="opacity-0 translate-y-2"
-                        x-transition:enter-end="opacity-100 translate-y-0"
-                        x-transition:leave="transition ease-in duration-150"
-                        x-transition:leave-start="opacity-100 translate-y-0"
-                        x-transition:leave-end="opacity-0 translate-y-2"
-                        class="destination-suggestions-dropdown absolute top-full left-0 w-full rounded-xl mt-2 z-50 overflow-hidden py-1 max-h-60 overflow-y-auto">
-                        <template x-for="(suggestion, index) in suggestions" :key="index">
-                            <div @click="selectSuggestion(suggestion)"
-                                :class="{'bg-primary-subtle-hover': selectedIndex === index}"
-                                class="suggestion-item px-4 py-3 flex items-center gap-3 hover:bg-gray-50">
-                                <i class="fa-solid fa-location-dot text-primary text-sm"></i>
-                                <span x-text="suggestion.name || suggestion" class="text-gray-700"></span>
+                    {{-- Suggestions Dropdown --}}
+                    <div x-show="suggestions.length > 0" @click.outside="suggestions = []" style="display: none;"
+                        class="absolute top-full left-0 w-full bg-white rounded-xl mt-2 z-50 shadow-xl border border-gray-100 max-h-60 overflow-y-auto">
+                        <template x-for="(item, index) in suggestions" :key="index">
+                            <div @click="selectItem(item)"
+                                :class="{ 'bg-amber-50 text-primary-dark': activeIndex === index }"
+                                class="px-4 py-3 cursor-pointer hover:bg-gray-50 flex items-center gap-2 transition-colors">
+                                <i class="fa-solid fa-location-dot text-xs opacity-50"></i>
+                                <span x-text="item.name"></span>
                             </div>
                         </template>
                     </div>
                 </div>
             </div>
 
-            <!-- Budget with Custom Alpine Dropdown -->
+            {{-- Budget Select --}}
             <div class="w-full md:w-64" x-data="{
-                    open: false,
-                    selected: '',
-                    selectedLabel: 'Tất cả mức giá',
-                    options: @js($budgetOptions),
-
-                    selectOption(value, label) {
-                        this.selected = value;
-                        this.selectedLabel = label;
-                        this.open = false;
-                    }
-                 }" @click.away="open = false">
+                open: false,
+                selected: '',
+                selectedLabel: 'Tất cả mức giá',
+                options: @js($budgetOptions),
+                selectOption(value, label) {
+                    this.selected = value;
+                    this.selectedLabel = label;
+                    this.open = false;
+                }
+            }" @click.away="open = false">
 
                 <label class="search-label">
                     <i class="fa-solid fa-sack-dollar"></i>
@@ -298,30 +226,22 @@
                 </label>
 
                 <div class="relative">
-                    <!-- Hidden input for form submission -->
                     <input type="hidden" name="budget" x-model="selected">
 
-                    <!-- Custom select trigger -->
                     <button type="button" @click="open = !open"
                         class="search-input-shell w-full h-12 md:h-14 px-4 pl-12 flex items-center justify-between text-left">
                         <i
                             class="fa-solid fa-wallet search-input-icon absolute left-4 top-1/2 -translate-y-1/2 text-lg"></i>
                         <span x-text="selectedLabel" class="text-gray-800 font-medium truncate"></span>
                         <i class="fa-solid fa-chevron-down text-gray-400 text-xs transition-transform duration-200"
-                            :class="{'rotate-180': open}"></i>
+                            :class="{ 'rotate-180': open }"></i>
                     </button>
 
-                    <!-- Dropdown options -->
-                    <div x-show="open" x-transition:enter="transition ease-out duration-200"
-                        x-transition:enter-start="opacity-0 translate-y-2"
-                        x-transition:enter-end="opacity-100 translate-y-0"
-                        x-transition:leave="transition ease-in duration-150"
-                        x-transition:leave-start="opacity-100 translate-y-0"
-                        x-transition:leave-end="opacity-0 translate-y-2"
+                    <div x-show="open" style="display: none;"
                         class="budget-dropdown absolute top-full left-0 w-full rounded-xl mt-2 z-50 overflow-hidden py-1">
-                        @foreach($budgetOptions as $value => $label)
+                        @foreach ($budgetOptions as $value => $label)
                             <div @click="selectOption('{{ $value }}', '{{ $label }}')"
-                                :class="{'selected': selected === '{{ $value }}'}"
+                                :class="{ 'selected': selected === '{{ $value }}' }"
                                 class="budget-option px-4 py-3 flex items-center gap-3">
                                 <i class="fa-solid fa-coins text-primary text-sm opacity-60"></i>
                                 <span>{{ $label }}</span>
@@ -331,14 +251,96 @@
                 </div>
             </div>
 
-            <!-- Submit -->
+            {{-- Submit --}}
             <div class="w-full md:w-auto">
-                <button type="submit"
-                    class="search-submit-btn w-full md:w-auto h-12 md:h-14 px-8 rounded-xl flex items-center justify-center gap-2 text-white font-bold text-lg whitespace-nowrap">
+                <button type="button" @click="submitSearch"
+                    class="search-submit-btn w-full md:w-auto h-12 md:h-14 px-8 rounded-xl flex items-center justify-center gap-2 text-white font-bold text-lg">
                     <i class="fa-solid fa-search text-sm"></i>
                     <span>Tìm Ngay</span>
                 </button>
             </div>
-        </form>
+        </div>
     </div>
+</div>
+
+@push('scripts')
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('tourSearchComponent', () => ({
+                query: '',
+                suggestions: [],
+                activeIndex: -1,
+
+                fetchDestinations() {
+                    if (this.query.length < 1) {
+                        this.suggestions = [];
+                        return;
+                    }
+                    axios.get('{{ route('api.destination.suggestions') }}', {
+                            params: {
+                                q: this.query
+                            }
+                        })
+                        .then(res => {
+                            this.suggestions = res.data;
+                            this.activeIndex = -1;
+                        })
+                        .catch(err => console.error(err));
+                },
+
+                moveDown() {
+                    if (this.activeIndex < this.suggestions.length - 1) this.activeIndex++;
+                },
+
+                moveUp() {
+                    if (this.activeIndex > 0) this.activeIndex--;
+                },
+
+                selectHighlight() {
+                    if (this.activeIndex > -1 && this.suggestions[this.activeIndex]) {
+                        this.selectItem(this.suggestions[this.activeIndex]);
+                    }
+                },
+
+                selectItem(item) {
+                    this.query = item.name;
+                    this.suggestions = [];
+                },
+
+                submitSearch() {
+                    // Construct URL and redirect
+                    // Note: Budget is in a separate sibling scope, so we might need to rely on form submission or event
+                    // Alternatively, we can just wrap the whole thing in a form and submit() content.
+                    // The current structure removed the <form> tag from the wrapper. Let's put it back or simulate it.
+                    // The user code example had a form.
+                    // I will find the budget input and destination input and construct query manually
+                    // OR better: Restore the <form> tag and just submit it.
+
+                    // Let's rely on standard form submission if possible.
+                    // But wait, the previous code had form.
+                    // The replacement code I wrote above has <div x-data...> without form.
+                    // I should change the wrapper div to a form.
+
+                    const form = this.$el.closest('form') || this.$el.querySelector('form');
+                    if (form) form.submit();
+                    else {
+                        // Manual build
+                        const budget = document.querySelector('input[name="budget"]')?.value || '';
+                        const dest = this.query;
+                        let url = '{{ route('client.tours') }}';
+                        const params = new URLSearchParams();
+                        if (dest) params.append('destination', dest);
+                        if (budget) {
+                            const [min, max] = budget.split('-');
+                            if (min) params.append('price_from', min);
+                            if (max) params.append('price_to', max);
+                        }
+                        window.location.href = url + '?' + params.toString();
+                    }
+                }
+            }));
+        });
+    </script>
+@endpush
+</div>
 </div>

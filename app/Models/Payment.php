@@ -35,6 +35,13 @@ use Illuminate\Support\Carbon;
  */
 class Payment extends Model
 {
+    // Status Constants based on Migration Enum
+    const STATUS_PENDING = 'PENDING';
+    const STATUS_SUCCESS = 'SUCCESS';
+    const STATUS_FAILED = 'FAILED';
+    const STATUS_CANCELLED = 'CANCELLED';
+    const STATUS_REFUNDED = 'REFUNDED';
+
     protected $fillable = [
         'order_id',
         'method',
