@@ -42,13 +42,18 @@ class ClientCheckoutController extends Controller
             'address' => 'nullable|string|max:1000',
             'departure_date' => 'required|date|after_or_equal:today',
             'adult_quantity' => 'required|integer|min:1',
-            'child_quantity' => 'required|integer|min:0',
-            'toddler_quantity' => 'required|integer|min:0',
-            'infant_quantity' => 'required|integer|min:0',
+            'child_quantity' => 'nullable|integer|min:0',
+            'toddler_quantity' => 'nullable|integer|min:0',
+            'infant_quantity' => 'nullable|integer|min:0',
             'note' => 'nullable|string',
             'payment_method' => ['required', Rule::in(['office', 'vnpay'])],
             'website_url' => 'nullable|max:0',
         ]);
+
+        // Ensure all quantity fields have default values
+        $validated['child_quantity'] = $validated['child_quantity'] ?? 0;
+        $validated['toddler_quantity'] = $validated['toddler_quantity'] ?? 0;
+        $validated['infant_quantity'] = $validated['infant_quantity'] ?? 0;
 
         if (($validated['adult_quantity'] + $validated['child_quantity']) > ($tour->remaining_slots ?? 999)) {
             return back()->withInput()->with('error', 'Số lượng khách vượt quá số chỗ còn lại của tour.');

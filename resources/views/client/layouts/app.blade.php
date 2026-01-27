@@ -336,6 +336,197 @@
             }
         }
 
+        /* ========================================
+           SLIDER NAVIGATION - MODERN DESIGN
+        ======================================== */
+        .slider-container {
+            position: relative;
+        }
+
+        /* ========================================
+           FIX: Card Hover Effects in Sliders
+           Allow translate-y and shadow to show
+        ======================================== */
+
+        /* Wrapper for sliders with hover effects */
+        .slider-overflow-fix {
+            padding: 12px 0 20px;
+            margin: -12px 0 -20px;
+        }
+
+        /* Override Swiper default overflow */
+        .tour-slider.swiper,
+        .news-slider.swiper,
+        .featured-tours-slider.swiper {
+            overflow: visible !important;
+        }
+
+        .tour-slider .swiper-wrapper,
+        .news-slider .swiper-wrapper,
+        .featured-tours-slider .swiper-wrapper {
+            /* Allow cards to show outside bounds */
+            overflow: visible !important;
+        }
+
+        .swiper-slide {
+            height: auto !important;
+            /* Ensure slides don't clip content */
+            overflow: visible !important;
+        }
+
+        /* Hero slider should remain clipped */
+        .hero-slider.swiper {
+            overflow: hidden !important;
+        }
+
+        /* Navigation Wrapper */
+        .slider-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Modern Slider Navigation Buttons */
+        .slider-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            z-index: 20;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .slider-nav-btn::after {
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            font-size: 14px;
+            color: #374151;
+            transition: color 0.3s var(--ease-smooth);
+        }
+
+        .slider-nav-btn.swiper-button-prev {
+            left: -22px;
+        }
+
+        .slider-nav-btn.swiper-button-prev::after {
+            content: '\f053';
+        }
+
+        .slider-nav-btn.swiper-button-next {
+            right: -22px;
+        }
+
+        .slider-nav-btn.swiper-button-next::after {
+            content: '\f054';
+        }
+
+        .slider-nav-btn:hover {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .slider-nav-btn:hover::after {
+            color: #ffffff;
+        }
+
+        .slider-nav-btn:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        .slider-nav-btn.swiper-button-disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* Mobile adjustments - hide nav buttons on small screens */
+        @media (max-width: 640px) {
+            .slider-nav-btn {
+                display: none !important;
+            }
+        }
+
+        /* Tablet/Desktop spacing adjustment */
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .slider-nav-btn {
+                width: 40px;
+                height: 40px;
+            }
+
+            .slider-nav-btn.swiper-button-prev {
+                left: -16px;
+            }
+
+            .slider-nav-btn.swiper-button-next {
+                right: -16px;
+            }
+        }
+
+        /* Large screens - buttons outside container */
+        @media (min-width: 1280px) {
+            .slider-container {
+                padding-left: 24px;
+                padding-right: 24px;
+                margin-left: -24px;
+                margin-right: -24px;
+            }
+
+            .slider-nav-btn.swiper-button-prev {
+                left: 0;
+            }
+
+            .slider-nav-btn.swiper-button-next {
+                right: 0;
+            }
+        }
+
+        /* Inline Header Navigation Style (for section headers) */
+        .slider-header-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .slider-header-nav .slider-nav-btn {
+            position: static;
+            transform: none;
+            width: 36px;
+            height: 36px;
+        }
+
+        .slider-header-nav .slider-nav-btn:hover {
+            transform: scale(1.08);
+        }
+
+        .slider-header-nav .slider-nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        @media (max-width: 640px) {
+            .slider-header-nav .slider-nav-btn {
+                display: flex !important;
+                width: 32px;
+                height: 32px;
+            }
+
+            .slider-header-nav .slider-nav-btn::after {
+                font-size: 12px;
+            }
+        }
+
         /* Skip Link */
         .skip-link {
             position: absolute;

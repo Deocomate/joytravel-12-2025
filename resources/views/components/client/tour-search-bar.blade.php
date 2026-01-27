@@ -1,6 +1,8 @@
 @props(['variant' => 'overlay'])
 
 @php
+    use App\Http\Controllers\Client\ClientTourController;
+
     $isOverlay = $variant === 'overlay';
     $isHero = $variant === 'hero';
     $isMobile = $variant === 'mobile';
@@ -27,14 +29,8 @@
         $panelClasses = 'search-panel-glass rounded-2xl p-4 mx-auto max-w-xl';
     }
 
-    // Budget options
-    $budgetOptions = [
-        '' => 'Tất cả mức giá',
-        '0-5000000' => 'Dưới 5 triệu',
-        '5000000-10000000' => '5 - 10 triệu',
-        '10000000-20000000' => '10 - 20 triệu',
-        '20000000-999999999' => 'Trên 20 triệu',
-    ];
+    // Use standardized price presets from controller
+    $pricePresets = ClientTourController::PRICE_PRESETS;
 @endphp
 
 <div class="{{ $wrapperClasses }}">
@@ -48,7 +44,7 @@
                 box-shadow: 0 20px 40px -4px rgba(0, 0, 0, 0.1), 0 8px 16px -4px rgba(0, 0, 0, 0.05);
                 position: relative;
                 z-index: 100;
-                isolation: isolate;
+                overflow: visible !important;
             }
 
             .search-input-shell {
@@ -207,14 +203,13 @@
                 </div>
             </div>
 
-            {{-- Budget Select --}}
+            {{-- Budget Select - Using standardized price_preset --}}
             <div class="w-full md:w-64" x-data="{
                 open: false,
-                selected: '',
-                selectedLabel: 'Tất cả mức giá',
-                options: @js($budgetOptions),
-                selectOption(value, label) {
-                    this.selected = value;
+                selected: 'all',
+                selectedLabel: '{{ $pricePresets['all']['label'] }}',
+                selectOption(key, label) {
+                    this.selected = key;
                     this.selectedLabel = label;
                     this.open = false;
                 }
@@ -226,12 +221,11 @@
                 </label>
 
                 <div class="relative">
-                    <input type="hidden" name="budget" x-model="selected">
+                    <input type="hidden" name="price_preset" x-model="selected">
 
                     <button type="button" @click="open = !open"
                         class="search-input-shell w-full h-12 md:h-14 px-4 pl-12 flex items-center justify-between text-left">
-                        <i
-                            class="fa-solid fa-wallet search-input-icon absolute left-4 top-1/2 -translate-y-1/2 text-lg"></i>
+                        <i class="fa-solid fa-wallet search-input-icon absolute left-4 top-1/2 -translate-y-1/2 text-lg"></i>
                         <span x-text="selectedLabel" class="text-gray-800 font-medium truncate"></span>
                         <i class="fa-solid fa-chevron-down text-gray-400 text-xs transition-transform duration-200"
                             :class="{ 'rotate-180': open }"></i>
@@ -239,12 +233,12 @@
 
                     <div x-show="open" style="display: none;"
                         class="budget-dropdown absolute top-full left-0 w-full rounded-xl mt-2 z-50 overflow-hidden py-1">
-                        @foreach ($budgetOptions as $value => $label)
-                            <div @click="selectOption('{{ $value }}', '{{ $label }}')"
-                                :class="{ 'selected': selected === '{{ $value }}' }"
+                        @foreach ($pricePresets as $key => $preset)
+                            <div @click="selectOption('{{ $key }}', '{{ $preset['label'] }}')"
+                                :class="{ 'selected': selected === '{{ $key }}' }"
                                 class="budget-option px-4 py-3 flex items-center gap-3">
                                 <i class="fa-solid fa-coins text-primary text-sm opacity-60"></i>
-                                <span>{{ $label }}</span>
+                                <span>{{ $preset['label'] }}</span>
                             </div>
                         @endforeach
                     </div>
@@ -308,39 +302,19 @@
                 },
 
                 submitSearch() {
-                    // Construct URL and redirect
-                    // Note: Budget is in a separate sibling scope, so we might need to rely on form submission or event
-                    // Alternatively, we can just wrap the whole thing in a form and submit() content.
-                    // The current structure removed the <form> tag from the wrapper. Let's put it back or simulate it.
-                    // The user code example had a form.
-                    // I will find the budget input and destination input and construct query manually
-                    // OR better: Restore the <form> tag and just submit it.
+                    const pricePreset = document.querySelector('input[name="price_preset"]')?.value || 'all';
+                    const dest = this.query;
+                    let url = '{{ route('client.tours') }}';
+                    const params = new URLSearchParams();
 
-                    // Let's rely on standard form submission if possible.
-                    // But wait, the previous code had form.
-                    // The replacement code I wrote above has <div x-data...> without form.
-                    // I should change the wrapper div to a form.
-
-                    const form = this.$el.closest('form') || this.$el.querySelector('form');
-                    if (form) form.submit();
-                    else {
-                        // Manual build
-                        const budget = document.querySelector('input[name="budget"]')?.value || '';
-                        const dest = this.query;
-                        let url = '{{ route('client.tours') }}';
-                        const params = new URLSearchParams();
-                        if (dest) params.append('destination', dest);
-                        if (budget) {
-                            const [min, max] = budget.split('-');
-                            if (min) params.append('price_from', min);
-                            if (max) params.append('price_to', max);
-                        }
-                        window.location.href = url + '?' + params.toString();
+                    if (dest) params.append('destination', dest);
+                    if (pricePreset && pricePreset !== 'all') {
+                        params.append('price_preset', pricePreset);
                     }
+
+                    window.location.href = url + (params.toString() ? '?' + params.toString() : '');
                 }
             }));
         });
     </script>
 @endpush
-</div>
-</div>

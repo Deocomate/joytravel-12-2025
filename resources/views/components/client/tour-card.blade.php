@@ -1,165 +1,99 @@
 @props(['tour'])
 
 @if ($tour)
-    <div
-        class="tour-card group h-full flex flex-col rounded-2xl overflow-hidden bg-white/80 backdrop-blur-sm transition-all duration-500 hover:-translate-y-2">
-        <style>
-            .tour-card {
-                border: 2px solid rgba(229, 231, 235, 0.8);
-                box-shadow: none;
-            }
-
-            .tour-card:hover {
-                border-color: var(--color-primary);
-                box-shadow: none;
-            }
-
-            .tour-card-image {
-                position: relative;
-                overflow: hidden;
-            }
-
-            .tour-card-image::after {
-                content: '';
-                position: absolute;
-                inset: 0;
-                background: linear-gradient(180deg, transparent 40%, rgba(0, 0, 0, 0.6) 100%);
-                opacity: 0.7;
-                transition: opacity 0.4s ease;
-            }
-
-            .tour-card:hover .tour-card-image::after {
-                opacity: 0.5;
-            }
-
-            .tour-card-image img {
-                transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            }
-
-            .tour-card:hover .tour-card-image img {
-                transform: scale(1.08);
-            }
-
-            .location-badge {
-                background: rgba(255, 255, 255, 0.9);
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
-                border: 1px solid rgba(255, 255, 255, 0.5);
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            }
-
-            .featured-indicator {
-                background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-                box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
-            }
-
-            .price-tag {
-                background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-                box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-            }
-
-            .tour-card-cta {
-                background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-                opacity: 0;
-                transform: translateY(10px);
-                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            }
-
-            .tour-card:hover .tour-card-cta {
-                opacity: 1;
-                transform: translateY(0);
-            }
-
-            .info-icon {
-                color: var(--color-primary);
-                opacity: 0.8;
-            }
-        </style>
+    <article
+        class="tour-card group h-full flex flex-col rounded-2xl overflow-hidden bg-white cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-gray-100 hover:border-primary/30">
 
         <a href="{{ route('client.tour.show', $tour) }}" title="{{ $tour->name ?? '' }}"
-            class="block flex flex-col flex-grow">
-            <!-- Image Section -->
-            <div class="tour-card-image relative h-52">
-                <img class="w-full h-full object-cover"
+            class="flex flex-col flex-grow" aria-label="Xem chi tiết tour {{ $tour->name ?? '' }}">
+            {{-- Image Section --}}
+            <div class="relative h-48 sm:h-52 overflow-hidden">
+                <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     src="{{ $tour->thumbnail ?? '/userfiles/images/placeholder.jpg' }}"
                     alt="{{ $tour->name ?? 'Hình ảnh tour' }}" loading="lazy">
 
-                <!-- Location Badge with Glassmorphism -->
+                {{-- Gradient Overlay --}}
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+
+                {{-- Location Badge --}}
                 <div
-                    class="location-badge absolute top-3 left-3 z-10 px-3 py-1.5 rounded-full flex items-center gap-x-1.5">
-                    <i class="fa-solid fa-location-dot text-[var(--color-primary)] text-sm"></i>
-                    <span
-                        class="text-gray-800 text-xs font-semibold">{{ $tour->destinations->first()->name ?? 'Nhiều nơi' }}</span>
+                    class="absolute top-3 left-3 z-10 px-2.5 py-1.5 rounded-full bg-white/90 backdrop-blur-sm border border-white/50 shadow-sm flex items-center gap-1.5">
+                    <i class="fa-solid fa-location-dot text-primary text-xs"></i>
+                    <span class="text-gray-800 text-xs font-semibold truncate max-w-[120px]">
+                        {{ $tour->destinations->first()->name ?? 'Nhiều nơi' }}
+                    </span>
                 </div>
 
-                <!-- Featured Indicator (optional) -->
+                {{-- Featured Badge --}}
                 @if ($tour->is_featured ?? false)
-                    <div class="featured-indicator absolute top-3 right-3 z-10 px-2.5 py-1 rounded-full">
-                        <span class="text-white text-xs font-bold flex items-center gap-1">
-                            <i class="fa-solid fa-star text-[10px]"></i> Nổi bật
+                    <div
+                        class="absolute top-3 right-3 z-10 px-2 py-1 rounded-full bg-gradient-to-r from-primary to-amber-500 shadow-lg shadow-primary/30">
+                        <span class="text-white text-[10px] font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-crown"></i> HOT
                         </span>
                     </div>
                 @endif
 
-                <!-- Duration Badge -->
-                <div
-                    class="absolute bottom-3 left-3 z-10 bg-black/60 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-lg flex items-center gap-1.5">
-                    <i class="fa-regular fa-clock"></i>
-                    <span class="font-medium">{{ $tour->duration ?? 'N/A' }}</span>
-                </div>
+                {{-- Bottom Info Bar --}}
+                <div class="absolute bottom-0 left-0 right-0 p-3 flex items-end justify-between">
+                    {{-- Duration Badge --}}
+                    <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-sm">
+                        <i class="fa-regular fa-clock text-white/90 text-xs"></i>
+                        <span class="text-white text-xs font-medium">{{ $tour->duration ?? 'N/A' }}</span>
+                    </div>
 
-                <!-- Price Tag Overlay -->
-                <div class="price-tag absolute bottom-3 right-3 z-10 px-3 py-1.5 rounded-lg">
-                    <span class="text-white text-[10px] font-medium block leading-none opacity-90">Từ</span>
-                    <span
-                        class="text-white text-lg font-extrabold leading-tight">{{ number_format($tour->price_adult ?? 0) }}đ</span>
+                    {{-- Price Tag --}}
+                    <div class="px-3 py-1.5 rounded-lg bg-red-600 shadow-lg">
+                        <span class="text-white/80 text-[10px] font-medium block leading-none">Từ</span>
+                        <span class="text-white text-base font-bold leading-tight">
+                            {{ number_format($tour->price_adult ?? 0) }}đ
+                        </span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Content Section -->
-            <div class="p-5 flex flex-col flex-grow relative">
-                <!-- Tour Name -->
+            {{-- Content Section --}}
+            <div class="p-4 flex flex-col flex-grow">
+                {{-- Tour Name --}}
                 <h3
-                    class="font-bold text-gray-800 text-base leading-snug h-12 overflow-hidden group-hover:text-[var(--color-primary)] transition-colors duration-300 [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]">
+                    class="font-bold text-gray-800 text-sm sm:text-base leading-snug min-h-[2.5rem] overflow-hidden group-hover:text-primary transition-colors duration-200 [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]">
                     {{ $tour->name ?? 'Tên tour đang được cập nhật' }}
                 </h3>
 
-                <!-- Rating Display -->
+                {{-- Rating --}}
                 <div class="flex items-center gap-2 mt-2">
-                    <div class="flex gap-0.5">
+                    <div class="flex gap-0.5" aria-label="Đánh giá {{ $tour->rating ?? 5 }} sao">
                         @for ($i = 0; $i < 5; $i++)
                             <i
-                                class="fa-solid fa-star text-xs {{ $i < ($tour->rating ?? 5) ? 'text-amber-400' : 'text-gray-300' }}"></i>
+                                class="fa-solid fa-star text-[10px] {{ $i < ($tour->rating ?? 5) ? 'text-amber-400' : 'text-gray-200' }}"></i>
                         @endfor
                     </div>
-                    <span class="text-xs text-gray-500">({{ $tour->reviews_count ?? rand(10, 50) }} đánh giá)</span>
+                    <span class="text-[11px] text-gray-500">({{ $tour->reviews_count ?? rand(10, 50) }})</span>
                 </div>
 
-                <!-- Tour Details -->
-                <div class="mt-4 space-y-2.5 flex-grow">
-                    <div class="flex items-center text-sm text-gray-600">
-                        <i class="fa-regular fa-clock info-icon w-5 text-center"></i>
-                        <span class="ml-2">Lịch trình: <strong
-                                class="text-gray-800">{{ $tour->duration ?? 'N/A' }}</strong></span>
+                {{-- Quick Info --}}
+                <div class="mt-3 pt-3 border-t border-gray-100 space-y-2 flex-grow">
+                    <div class="flex items-center text-xs text-gray-600">
+                        <i class="fa-regular fa-calendar-check text-primary/70 w-4"></i>
+                        <span class="ml-1.5">Khởi hành: <strong class="text-gray-700">Liên hệ</strong></span>
                     </div>
-                    <div class="flex items-center text-sm text-gray-600">
-                        <i class="fa-regular fa-calendar-check info-icon w-5 text-center"></i>
-                        <span class="ml-2">Khởi hành: <strong class="text-gray-800">Liên hệ</strong></span>
-                    </div>
-                    <div class="flex items-center text-sm text-gray-600">
-                        <i class="fa-solid fa-users info-icon w-5 text-center"></i>
-                        <span class="ml-2">Còn nhận: <strong
-                                class="text-gray-800">{{ $tour->remaining_slots ?? 'N/A' }}</strong></span>
+                    <div class="flex items-center text-xs text-gray-600">
+                        <i class="fa-solid fa-users text-primary/70 w-4"></i>
+                        <span class="ml-1.5">Còn nhận: <strong
+                                class="text-gray-700">{{ $tour->remaining_slots ?? 'Liên hệ' }}</strong></span>
                     </div>
                 </div>
 
-                <!-- CTA Button (appears on hover) -->
-                <div class="tour-card-cta mt-4 py-2.5 rounded-lg text-center">
-                    <span class="text-white font-semibold text-sm flex items-center justify-center gap-2">
-                        Xem chi tiết <i class="fa-solid fa-arrow-right text-xs"></i>
+                {{-- CTA --}}
+                <div
+                    class="mt-3 py-2 rounded-lg bg-gray-50 group-hover:bg-primary text-center transition-all duration-300">
+                    <span
+                        class="text-gray-600 group-hover:text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors">
+                        Xem chi tiết
+                        <i class="fa-solid fa-arrow-right text-[10px] transition-transform group-hover:translate-x-0.5"></i>
                     </span>
                 </div>
             </div>
         </a>
-    </div>
+    </article>
 @endif

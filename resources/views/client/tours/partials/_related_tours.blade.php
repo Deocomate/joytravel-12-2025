@@ -9,17 +9,19 @@
             </a>
         </div>
         <div class="relative slider-container related-tours-slider-container">
-            <div class="swiper tour-slider">
-                <div class="swiper-wrapper">
-                    @foreach ($relatedTours as $relatedTour)
-                        <div class="swiper-slide h-auto">
-                            <x-client.tour-card :tour="$relatedTour" />
-                        </div>
-                    @endforeach
+            <div class="slider-overflow-fix">
+                <div class="swiper tour-slider">
+                    <div class="swiper-wrapper">
+                        @foreach ($relatedTours as $relatedTour)
+                            <div class="swiper-slide">
+                                <x-client.tour-card :tour="$relatedTour" />
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
             </div>
-            <div class="swiper-button-next !hidden md:!flex"></div>
-            <div class="swiper-button-prev !hidden md:!flex"></div>
+            <div class="slider-nav-btn swiper-button-next"></div>
+            <div class="slider-nav-btn swiper-button-prev"></div>
         </div>
         {{-- Mobile "View All" button --}}
         <div class="mt-6 text-center sm:hidden">

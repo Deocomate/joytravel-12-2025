@@ -43,14 +43,14 @@
                 <div class="flex items-center gap-2">
                     @guest
                         <a href="{{ route('client.login') }}"
-                            class="px-3 py-1.5 text-sm font-medium rounded-full hover:bg-white/15 active:bg-white/25 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/40"
+                            class="px-3 py-1.5 text-sm font-medium rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/40 {{ request()->routeIs('client.login') ? 'bg-white/25 ring-2 ring-white/40' : 'hover:bg-white/15 active:bg-white/25' }}"
                             aria-label="Đăng nhập">
                             <i class="fa-solid fa-right-to-bracket mr-1.5" aria-hidden="true"></i>
                             Đăng nhập
                         </a>
                         <span class="opacity-40 text-xs">|</span>
                         <a href="{{ route('client.register') }}"
-                            class="px-3 py-1.5 text-sm font-medium rounded-full bg-white/15 hover:bg-white/25 active:bg-white/30 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/40"
+                            class="px-3 py-1.5 text-sm font-medium rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/40 {{ request()->routeIs('client.register') ? 'bg-white/25 ring-2 ring-white/40' : 'hover:bg-white/15 active:bg-white/25' }}"
                             aria-label="Đăng ký">
                             <i class="fa-solid fa-user-plus mr-1.5" aria-hidden="true"></i>
                             Đăng ký
