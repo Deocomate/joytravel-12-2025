@@ -6,8 +6,8 @@
     dạng lựa chọn, giá cả cạnh tranh.')
 
 @php
-    use App\Http\Controllers\Client\ClientTourController;
-    $pricePresets = ClientTourController::PRICE_PRESETS;
+    use App\Services\Client\SearchService;
+    $pricePresets = $pricePresets ?? SearchService::PRICE_PRESETS;
 @endphp
 
 @section('content')

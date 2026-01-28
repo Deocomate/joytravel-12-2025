@@ -38,7 +38,7 @@
                                     {{ $category->name }}
                                 </option>
                             @endforeach
-                        </x-inputs.select>
+                        </x-admin.inputs.select>
                     </div>
                     <div class="col-md-6">
                         <x-admin.inputs.number label="Độ ưu tiên" name="priority"

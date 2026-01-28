@@ -61,13 +61,13 @@
                     <div class="card-body">
                         <x-admin.inputs.text label="Mã tour" name="tour_code" :value="old('tour_code', $tour->tour_code ?? '')" required/>
                         <x-admin.inputs.image-link label="Ảnh đại diện" name="thumbnail" :value="old('thumbnail', $tour->thumbnail ?? '')"/>
-                        <x-admin.inputs.select-multiple label="Danh mục" name="category_ids">
+                        <x-admin.inputs.select label="Danh mục" name="category_ids" :multiple="true" :searchable="true">
                             @foreach($categories as $category)
                                 <option value="{{ $category->id }}" @selected(in_array($category->id, old('category_ids', $isEdit ? $tour->categories->pluck('id')->toArray() : [])))>
                                     {{ $category->name }}
                                 </option>
                             @endforeach
-                        </x-inputs.select-multiple>
+                        </x-admin.inputs.select>
 
                         <div class="form-group">
                             <label>Hành trình (Điểm đến)</label>

@@ -1,14 +1,14 @@
 {{-- Filter Form Partial - Reusable for Desktop and Mobile --}}
 @php
-    use App\Http\Controllers\Client\ClientTourController;
+    use App\Services\Client\SearchService;
 
     $formId = $isMobile ?? false ? 'mobile-filter-form' : 'desktop-filter-form';
-    $pricePresets = ClientTourController::PRICE_PRESETS;
-    $sortOptions = ClientTourController::SORT_OPTIONS;
-    $sliderConfig = [
-        'min' => ClientTourController::PRICE_SLIDER_MIN,
-        'max' => ClientTourController::PRICE_SLIDER_MAX,
-        'step' => ClientTourController::PRICE_SLIDER_STEP,
+    $pricePresets = $pricePresets ?? SearchService::PRICE_PRESETS;
+    $sortOptions = $sortOptions ?? SearchService::SORT_OPTIONS;
+    $sliderConfig = $priceSliderConfig ?? [
+        'min' => SearchService::PRICE_SLIDER_MIN,
+        'max' => SearchService::PRICE_SLIDER_MAX,
+        'step' => SearchService::PRICE_SLIDER_STEP,
     ];
 
     $currentPricePreset = request('price_preset', '');

@@ -1,73 +1,115 @@
-<div class="form-group">
-    <label for="input-{{$name}}">{{$label}}</label>
+@php
+    $inputId = $attributes->get('id', 'input-' . $name);
+    $previewId = 'preview-' . $name;
+    $previewContainerId = 'preview-container-' . $name;
+    $currentValue = old($name, $value);
+@endphp
+
+<x-admin.inputs.wrapper :label="$label" :name="$name" :required="$required" :id="$inputId">
     <div class="input-group">
-        <input readonly type="text" class="form-control ckfinder-input" name="{{ $name }}" id="input-{{ $name }}"
-               required value="{{$value==""?old($name):$value}}">
+        <input
+            readonly
+            type="text"
+            name="{{ $name }}"
+            id="{{ $inputId }}"
+            value="{{ $currentValue }}"
+            {{ $attributes->except(['id', 'name', 'value'])->merge(['class' => 'form-control']) }}
+            @if($required) required @endif
+        >
         <span class="input-group-append">
-            <button type="button" class="btn btn-secondary ckfinder-popup" id="button-popup-{{$name}}">
+            <button
+                type="button"
+                class="btn btn-secondary btn-ckfinder"
+                data-input-id="{{ $inputId }}"
+                data-preview-id="{{ $previewId }}"
+                data-preview-container="{{ $previewContainerId }}"
+            >
                 Duyệt Ảnh
             </button>
         </span>
     </div>
-    @error($name)
-    <div class="text-danger">{{ $message }}</div>
-    @enderror
 
-    <div id="preview-container-{{ $name }}" style="margin-top: 10px;">
-        @if($value || old($name))
-            <img src="{{ $value ?: old($name) }}" alt="Image Preview" id="preview-image-{{ $name }}"
-                 style="max-width: 200px; max-height: 200px; display: block;">
-        @else
-            <img src="" alt="Image Preview" id="preview-image-{{ $name }}"
-                 style="max-width: 200px; max-height: 200px; display: none;">
-        @endif
+    <div id="{{ $previewContainerId }}" class="mt-2" style="{{ $currentValue ? '' : 'display:none' }}">
+        <img
+            src="{{ $currentValue }}"
+            alt="Image Preview"
+            id="{{ $previewId }}"
+            style="max-width: 200px; max-height: 200px; display: {{ $currentValue ? 'block' : 'none' }};"
+        >
+        <button
+            type="button"
+            class="btn btn-xs btn-danger mt-1 btn-clear-image"
+            data-input-id="{{ $inputId }}"
+            data-preview-id="{{ $previewId }}"
+            data-preview-container="{{ $previewContainerId }}"
+        >
+            Xóa ảnh
+        </button>
     </div>
-</div>
+</x-admin.inputs.wrapper>
 
-@push("scripts")
+@pushonce("scripts")
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            let button_popup_{{$name}} = document.getElementById("button-popup-{{$name}}");
-            let preview_container_{{$name}} = document.getElementById("preview-container-{{$name}}");
-            let preview_image_{{$name}} = document.getElementById("preview-image-{{$name}}");
+            document.addEventListener('click', function (e) {
+                const ckfinderButton = e.target.closest('.btn-ckfinder');
+                if (ckfinderButton) {
+                    const inputId = ckfinderButton.dataset.inputId;
+                    const previewId = ckfinderButton.dataset.previewId;
+                    const previewContainerId = ckfinderButton.dataset.previewContainer;
 
-            button_popup_{{$name}}.onclick = async () => {
-                CKFinder.popup({
-                    chooseFiles: true,
-                    width: 800,
-                    height: 600,
-                    onInit: function (finder) {
-                        finder.on('files:choose', function (evt) {
-                            let file = evt.data.files.first();
-                            let fullUrl = file.getUrl();
-                            let path;
-                            try {
-                                let urlObj = new URL(fullUrl);
-                                path = urlObj.pathname;
-                            } catch (e) {
-                                path = fullUrl;
-                            }
-                            let parentElement = button_popup_{{$name}}.closest(".input-group");
-                            if (parentElement) {
-                                let input = parentElement.querySelector(".ckfinder-input");
+                    CKFinder.popup({
+                        chooseFiles: true,
+                        width: 800,
+                        height: 600,
+                        onInit: function (finder) {
+                            finder.on('files:choose', function (evt) {
+                                const file = evt.data.files.first();
+                                const fullUrl = file.getUrl();
+                                let path;
+                                try {
+                                    path = new URL(fullUrl).pathname;
+                                } catch (err) {
+                                    path = fullUrl;
+                                }
+
+                                const input = document.getElementById(inputId);
+                                const previewImage = document.getElementById(previewId);
+                                const previewContainer = document.getElementById(previewContainerId);
+
                                 if (input) {
                                     input.value = path;
                                 }
-                            }
+                                if (previewImage) {
+                                    previewImage.src = path;
+                                    previewImage.style.display = "block";
+                                }
+                                if (previewContainer) {
+                                    previewContainer.style.display = "block";
+                                }
+                            });
+                        }
+                    });
+                }
 
-                            if (preview_image_{{$name}}) {
-                                preview_image_{{$name}}.src = path;
-                                preview_image_{{$name}}.style.display = "block";
-                            }
-                            if (preview_container_{{$name}}) {
-                                preview_container_{{$name}}.style.display = "block";
-                            }
-                        });
-                        finder.on('file:choose:resizedImage', function (evt) {
-                        });
+                const clearButton = e.target.closest('.btn-clear-image');
+                if (clearButton) {
+                    const input = document.getElementById(clearButton.dataset.inputId);
+                    const previewImage = document.getElementById(clearButton.dataset.previewId);
+                    const previewContainer = document.getElementById(clearButton.dataset.previewContainer);
+
+                    if (input) {
+                        input.value = "";
                     }
-                });
-            }
+                    if (previewImage) {
+                        previewImage.src = "";
+                        previewImage.style.display = "none";
+                    }
+                    if (previewContainer) {
+                        previewContainer.style.display = "none";
+                    }
+                }
+            });
         });
     </script>
-@endpush
+@endpushonce

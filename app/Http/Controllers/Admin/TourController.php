@@ -6,41 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Destination;
 use App\Models\Tour;
+use App\Services\Admin\TourService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class TourController extends Controller
 {
+    public function __construct(private TourService $tourService)
+    {
+    }
+
     public function index(Request $request): View
     {
-        $query = Tour::with(['categories', 'destinations']);
-
-        $request->whenFilled('search', function ($search) use ($query) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('tour_code', 'like', '%' . $search . '%');
-            });
-        });
-
-        $request->whenFilled('category_id', function ($categoryId) use ($query) {
-            $query->whereHas('categories', fn($q) => $q->where('categories.id', $categoryId));
-        });
-
-        $request->whenFilled('destination_id', function ($destinationId) use ($query) {
-            $query->whereHas('destinations', fn($q) => $q->where('destinations.id', $destinationId));
-        });
-
-        $request->whenFilled('price_from', function ($priceFrom) use ($query) {
-            $query->where('price_adult', '>=', $priceFrom);
-        });
-
-        $request->whenFilled('price_to', function ($priceTo) use ($query) {
-            $query->where('price_adult', '<=', $priceTo);
-        });
-
-        $tours = $query->orderByDesc('created_at')->orderBy('priority')->paginate(10)->withQueryString();
+        $tours = $this->tourService->getTours($request->all());
         $categories = Category::where('type', 'TOUR')->get();
         $destinations = Destination::all();
 
@@ -85,18 +64,7 @@ class TourController extends Controller
             'destination_ids.*' => 'exists:destinations,id',
         ]);
 
-        $validatedData['slug'] = $this->generateUniqueSlug($validatedData['name']);
-
-        $tour = Tour::create($validatedData);
-        $tour->categories()->sync($request->input('category_ids', []));
-
-        $destinationsData = [];
-        if ($request->has('destination_ids')) {
-            foreach ($request->input('destination_ids') as $index => $destinationId) {
-                $destinationsData[$destinationId] = ['position' => $index + 1];
-            }
-        }
-        $tour->destinations()->sync($destinationsData);
+        $this->tourService->createTour($validatedData);
 
         return redirect()->route('admin.tours.index')->with('success', 'Tạo mới tour thành công.');
     }
@@ -140,20 +108,7 @@ class TourController extends Controller
             'destination_ids.*' => 'exists:destinations,id',
         ]);
 
-        if ($validatedData['name'] !== $tour->name) {
-            $validatedData['slug'] = $this->generateUniqueSlug($validatedData['name'], $tour->id);
-        }
-
-        $tour->update($validatedData);
-        $tour->categories()->sync($request->input('category_ids', []));
-
-        $destinationsData = [];
-        if ($request->has('destination_ids')) {
-            foreach ($request->input('destination_ids') as $index => $destinationId) {
-                $destinationsData[$destinationId] = ['position' => $index + 1];
-            }
-        }
-        $tour->destinations()->sync($destinationsData);
+        $this->tourService->updateTour($tour, $validatedData);
 
         return redirect()->route('admin.tours.index')->with('success', 'Cập nhật tour thành công.');
     }
@@ -164,25 +119,4 @@ class TourController extends Controller
         return redirect()->route('admin.tours.index')->with('success', 'Xóa tour thành công.');
     }
 
-    private function generateUniqueSlug(string $name, ?int $exceptId = null): string
-    {
-        $slug = Str::slug($name);
-        $originalSlug = $slug;
-        $counter = 1;
-
-        $query = Tour::where('slug', $slug);
-        if ($exceptId) {
-            $query->where('id', '!=', $exceptId);
-        }
-
-        while ($query->exists()) {
-            $slug = $originalSlug . '-' . $counter++;
-            $query = Tour::where('slug', $slug);
-            if ($exceptId) {
-                $query->where('id', '!=', $exceptId);
-            }
-        }
-
-        return $slug;
-    }
 }

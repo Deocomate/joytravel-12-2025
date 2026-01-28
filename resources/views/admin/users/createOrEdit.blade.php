@@ -26,19 +26,28 @@
                 <x-admin.inputs.text label="Tên người dùng" name="name" :value="old('name', $user->name ?? '')" required/>
 
                 @if ($isEdit)
-                    <div class="form-group">
-                        <label for="input-email">Email (Không thể thay đổi)</label>
-                        <input type="email" class="form-control" id="input-email" value="{{ $user->email }}" disabled>
-                        <input type="hidden" name="email" value="{{ $user->email }}">
-                    </div>
+                    <x-admin.inputs.text
+                        label="Email (Không thể thay đổi)"
+                        name="email_display"
+                        :value="$user->email"
+                        id="input-email"
+                        disabled
+                    />
+                    <input type="hidden" name="email" value="{{ $user->email }}">
                 @else
                     <x-admin.inputs.email label="Email" name="email" :value="old('email', $user->email ?? '')" required/>
                 @endif
 
-                <x-admin.inputs.select-simple label="Vai trò" name="role" required>
+                <x-admin.inputs.select
+                    label="Vai trò"
+                    name="role"
+                    :value="old('role', $user->role ?? 'user')"
+                    :searchable="false"
+                    required
+                >
                     <option value="user" @selected(old('role', $user->role ?? 'user') == 'user')>User</option>
                     <option value="admin" @selected(old('role', $user->role ?? 'user') == 'admin')>Admin</option>
-                </x-inputs.select-simple>
+                </x-admin.inputs.select>
 
                 <hr>
                 <p class="text-muted">{{ $isEdit ? 'Để trống nếu không muốn thay đổi mật khẩu.' : 'Nhập mật khẩu cho tài khoản mới.' }}</p>

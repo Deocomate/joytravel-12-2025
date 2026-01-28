@@ -23,12 +23,13 @@
                     <form action="{{ route('admin.news.index') }}" method="GET">
                         <div class="row">
                             <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="search-input">Tìm kiếm tiêu đề</label>
-                                    <input type="text" id="search-input" name="search" class="form-control"
-                                           placeholder="Nhập tiêu đề..."
-                                           value="{{ request('search') }}">
-                                </div>
+                                <x-admin.inputs.text
+                                    label="Tìm kiếm tiêu đề"
+                                    name="search"
+                                    id="search-input"
+                                    :value="request('search')"
+                                    placeholder="Nhập tiêu đề..."
+                                />
                             </div>
                             <div class="col-md-3">
                                 <x-admin.inputs.select label="Lọc theo danh mục" name="category_id" id="category_id">
@@ -39,7 +40,7 @@
                                             {{ $category->name }}
                                         </option>
                                     @endforeach
-                                </x-inputs.select>
+                                </x-admin.inputs.select>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">

@@ -1,7 +1,7 @@
 @props(['variant' => 'overlay'])
 
 @php
-    use App\Http\Controllers\Client\ClientTourController;
+    use App\Services\Client\SearchService;
 
     $isOverlay = $variant === 'overlay';
     $isHero = $variant === 'hero';
@@ -29,8 +29,8 @@
         $panelClasses = 'search-panel-glass rounded-2xl p-4 mx-auto max-w-xl';
     }
 
-    // Use standardized price presets from controller
-    $pricePresets = ClientTourController::PRICE_PRESETS;
+    // Use standardized price presets from service
+    $pricePresets = SearchService::PRICE_PRESETS;
 @endphp
 
 <div class="{{ $wrapperClasses }}">

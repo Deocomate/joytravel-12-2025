@@ -3,21 +3,21 @@
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
-use App\Mail\OrderConfirmationMail;
-use App\Models\Order;
-use App\Models\Payment;
 use App\Models\Tour;
+use App\Services\Client\BookingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ClientCheckoutController extends Controller
 {
+    public function __construct(private BookingService $bookingService)
+    {
+    }
+
     public function index(Tour $tour): View
     {
         $user = Auth::user();
@@ -50,73 +50,13 @@ class ClientCheckoutController extends Controller
             'website_url' => 'nullable|max:0',
         ]);
 
-        // Ensure all quantity fields have default values
-        $validated['child_quantity'] = $validated['child_quantity'] ?? 0;
-        $validated['toddler_quantity'] = $validated['toddler_quantity'] ?? 0;
-        $validated['infant_quantity'] = $validated['infant_quantity'] ?? 0;
-
-        if (($validated['adult_quantity'] + $validated['child_quantity']) > ($tour->remaining_slots ?? 999)) {
-            return back()->withInput()->with('error', 'Số lượng khách vượt quá số chỗ còn lại của tour.');
-        }
-
-        $totalPrice = ($validated['adult_quantity'] * ($tour->price_adult ?? 0))
-            + ($validated['child_quantity'] * ($tour->price_child ?? 0))
-            + ($validated['toddler_quantity'] * ($tour->price_toddler ?? 0))
-            + ($validated['infant_quantity'] * ($tour->price_infant ?? 0));
-
-        $order = null;
-
-        DB::beginTransaction();
         try {
-            $order = Order::create([
-                'user_id' => Auth::id(),
-                'tour_id' => $tour->id,
-                'full_name' => $validated['full_name'],
-                'email' => $validated['email'],
-                'phone' => $validated['phone'],
-                'address' => $validated['address'],
-                'departure_date' => $validated['departure_date'],
-                'adult_quantity' => $validated['adult_quantity'],
-                'child_quantity' => $validated['child_quantity'],
-                'toddler_quantity' => $validated['toddler_quantity'],
-                'infant_quantity' => $validated['infant_quantity'],
-                'total_price' => $totalPrice,
-                'note' => $validated['note'],
-                'status' => 'PENDING',
-            ]);
-
-            $paymentMethodText = 'Thanh toán tại văn phòng';
-            if ($validated['payment_method'] === 'vnpay') {
-                $paymentMethodText = 'VNPAY';
-            }
-
-            Payment::create([
-                'order_id' => $order->id,
-                'method' => $paymentMethodText,
-                'amount' => $totalPrice,
-                'status' => 'PENDING',
-            ]);
-
-            DB::commit();
-
+            $this->bookingService->createBooking($tour, $validated, Auth::id());
+        } catch (\RuntimeException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('Order creation failed: ' . $e->getMessage());
             return back()->withInput()->with('error', 'Đã có lỗi xảy ra trong quá trình đặt tour. Vui lòng thử lại.');
-        }
-
-        if ($order) {
-            try {
-                Mail::to($order->email)->send(new OrderConfirmationMail($order));
-
-                $adminEmail = env('ADMIN_EMAIL_RECIPIENT');
-                if ($adminEmail) {
-                    Mail::to($adminEmail)->send(new OrderConfirmationMail($order));
-                }
-
-            } catch (\Exception $e) {
-                Log::error('Sending order confirmation email failed: ' . $e->getMessage());
-            }
         }
 
         if ($validated['payment_method'] === 'vnpay') {

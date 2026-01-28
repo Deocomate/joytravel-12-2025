@@ -4,13 +4,17 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Destination;
+use App\Services\Common\SlugService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class DestinationController extends Controller
 {
+    public function __construct(private SlugService $slugService)
+    {
+    }
+
     public function index(Request $request): View
     {
         $query = Destination::query();
@@ -36,7 +40,7 @@ class DestinationController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $validatedData['slug'] = $this->generateUniqueSlug($validatedData['name']);
+        $validatedData['slug'] = $this->slugService->generate($validatedData['name'], Destination::class);
         Destination::create($validatedData);
 
         return redirect()->route('admin.destinations.index')->with('success', 'Tạo mới điểm đến thành công.');
@@ -55,7 +59,11 @@ class DestinationController extends Controller
         ]);
 
         if ($validatedData['name'] !== $destination->name) {
-            $validatedData['slug'] = $this->generateUniqueSlug($validatedData['name'], $destination->id);
+            $validatedData['slug'] = $this->slugService->generate(
+                $validatedData['name'],
+                Destination::class,
+                $destination->id
+            );
         }
 
         $destination->update($validatedData);
@@ -69,25 +77,4 @@ class DestinationController extends Controller
         return redirect()->route('admin.destinations.index')->with('success', 'Xóa điểm đến thành công.');
     }
 
-    private function generateUniqueSlug(string $name, ?int $exceptId = null): string
-    {
-        $slug = Str::slug($name);
-        $originalSlug = $slug;
-        $counter = 1;
-
-        $query = Destination::where('slug', $slug);
-        if ($exceptId) {
-            $query->where('id', '!=', $exceptId);
-        }
-
-        while ($query->exists()) {
-            $slug = $originalSlug . '-' . $counter++;
-            $query = Destination::where('slug', $slug);
-            if ($exceptId) {
-                $query->where('id', '!=', $exceptId);
-            }
-        }
-
-        return $slug;
-    }
 }

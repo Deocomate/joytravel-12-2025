@@ -1,20 +1,25 @@
-<div class="form-group">
-    <label for="input-{{$name}}">{{$label}}</label>
+@php
+    $inputId = $attributes->get('id', 'input-' . $name);
+@endphp
+
+<x-admin.inputs.wrapper :label="$label" :name="$name" :required="$required" :id="$inputId">
     <div class="input-group">
-        {{-- Input vẫn cần name và id để submit form và cho label --}}
-        <input readonly type="text" class="form-control" name="{{ $name }}" id="input-{{ $name }}"
-            required value="{{$value ?: old($name)}}">
+        <input
+            readonly
+            type="text"
+            name="{{ $name }}"
+            id="{{ $inputId }}"
+            value="{{ old($name, $value) }}"
+            {{ $attributes->except(['id', 'name', 'value'])->merge(['class' => 'form-control']) }}
+            @if($required) required @endif
+        >
         <span class="input-group-append">
-            {{-- Thay id bằng class để script có thể xử lý nhiều nút--}}
             <button type="button" class="btn btn-secondary ckfinder-file-popup-button">
                 Duyệt File
             </button>
         </span>
     </div>
-    @error($name)
-    <div class="text-danger">{{ $message }}</div>
-    @enderror
-</div>
+</x-admin.inputs.wrapper>
 
 {{--
 Sử dụng @pushonce để đảm bảo đoạn script này chỉ được thêm vào trang MỘT LẦN,

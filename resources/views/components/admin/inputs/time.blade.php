@@ -1,17 +1,23 @@
-<div class="form-group">
-    <label for="input-{{$name}}">{{$label}}</label>
-    <input type="time" class="form-control" id="input-{{$name}}" name="{{$name}}"
-           value="{{$value ?: old($name)}}" required
-           onfocus="this.showPicker()">
-    @error($name)
-    <div class="text-danger">{{ $message }}</div>
-    @enderror
-</div>
+@php
+    $inputId = $attributes->get('id', 'input-' . $name);
+@endphp
 
-@if($value=="" && old($name) == "")
+<x-admin.inputs.wrapper :label="$label" :name="$name" :required="$required" :id="$inputId">
+    <input
+        type="time"
+        name="{{ $name }}"
+        id="{{ $inputId }}"
+        value="{{ old($name, $value) }}"
+        onfocus="this.showPicker()"
+        {{ $attributes->except(['id', 'name', 'value'])->merge(['class' => 'form-control ' . ($errors->has($name) ? 'is-invalid' : '')]) }}
+        @if($required) required @endif
+    >
+</x-admin.inputs.wrapper>
+
+@if($value == "" && old($name) == "")
     @push('scripts')
         <script>
-            document.getElementById('input-{{$name}}').value = (new Date()).toTimeString().substring(0, 5);
+            document.getElementById('{{ $inputId }}').value = (new Date()).toTimeString().substring(0, 5);
         </script>
     @endpush
 @endif

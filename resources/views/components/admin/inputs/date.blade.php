@@ -1,18 +1,23 @@
-<div class="form-group">
-    <label for="input-{{$name}}">{{$label}}</label>
-    <input type="date" id="input-{{$name}}" name="{{$name}}" class="form-control"
-           value="{{ $value ?: old($name) }}"
-           onfocus="this.showPicker()"
-           @if($required) required @endif>
-    @error($name)
-    <div class="text-danger">{{ $message }}</div>
-    @enderror
-</div>
+@php
+    $inputId = $attributes->get('id', 'input-' . $name);
+@endphp
+
+<x-admin.inputs.wrapper :label="$label" :name="$name" :required="$required" :id="$inputId">
+    <input
+        type="date"
+        name="{{ $name }}"
+        id="{{ $inputId }}"
+        value="{{ old($name, $value) }}"
+        onfocus="this.showPicker()"
+        {{ $attributes->except(['id', 'name', 'value'])->merge(['class' => 'form-control ' . ($errors->has($name) ? 'is-invalid' : '')]) }}
+        @if($required) required @endif
+    >
+</x-admin.inputs.wrapper>
 
 @if($required && !$value && !old($name))
     @push('scripts')
         <script>
-            document.getElementById('input-{{$name}}').valueAsDate = new Date();
+            document.getElementById('{{ $inputId }}').valueAsDate = new Date();
         </script>
     @endpush
 @endif

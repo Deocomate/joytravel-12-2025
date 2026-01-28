@@ -1,8 +1,16 @@
-<div class="form-group">
-    <label for="input-{{$name}}">{{$label}}</label>
-    <input type="email" class="form-control" id="input-{{$name}}" name="{{$name}}"
-           value="{{$value ?: old($name)}}" placeholder="Enter {{$label}}" required>
-    @error($name)
-    <div class="text-danger">{{ $message }}</div>
-    @enderror
-</div>
+@php
+    $inputId = $attributes->get('id', 'input-' . $name);
+    $placeholderValue = $attributes->get('placeholder', 'Enter ' . $label);
+@endphp
+
+<x-admin.inputs.wrapper :label="$label" :name="$name" :required="$required" :id="$inputId">
+    <input
+        type="email"
+        name="{{ $name }}"
+        id="{{ $inputId }}"
+        value="{{ old($name, $value) }}"
+        placeholder="{{ $placeholderValue }}"
+        {{ $attributes->except(['id', 'name', 'value', 'placeholder'])->merge(['class' => 'form-control ' . ($errors->has($name) ? 'is-invalid' : '')]) }}
+        @if($required) required @endif
+    >
+</x-admin.inputs.wrapper>

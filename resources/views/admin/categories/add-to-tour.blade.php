@@ -20,13 +20,19 @@
                     </div>
                 @endif
 
-                <x-admin.inputs.select-multiple label="Chọn các danh mục muốn thêm" name="category_ids" :required="true">
+                <x-admin.inputs.select
+                    label="Chọn các danh mục muốn thêm"
+                    name="category_ids"
+                    :required="true"
+                    :multiple="true"
+                    :searchable="true"
+                >
                     @foreach($tourCategories as $category)
                         <option value="{{ $category->id }}" @selected(in_array($category->id, old('category_ids', [])))>
                             {{ $category->name }}
                         </option>
                     @endforeach
-                </x-inputs.select-multiple>
+                </x-admin.inputs.select>
 
                 <x-admin.inputs.text
                     label="Thêm các danh mục trên vào các tour có từ khóa này trong tên"

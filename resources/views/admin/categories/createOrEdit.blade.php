@@ -38,14 +38,14 @@
                                     {{ $parent->name }}
                                 </option>
                             @endforeach
-                        </x-inputs.select>
+                        </x-admin.inputs.select>
                     </div>
                     <div class="col-md-6">
-                        <x-admin.inputs.select-simple label="Loại" name="type" :required="true">
+                        <x-admin.inputs.select label="Loại" name="type" :required="true" :searchable="false">
                             <option value="">-- Chọn loại --</option>
                             <option value="TOUR" @selected(old('type', $category->type ?? '') == 'TOUR')>TOUR</option>
                             <option value="NEWS" @selected(old('type', $category->type ?? '') == 'NEWS')>NEWS</option>
-                        </x-inputs.select-simple>
+                        </x-admin.inputs.select>
                     </div>
                 </div>
 
@@ -54,10 +54,11 @@
                         <x-admin.inputs.number label="Độ ưu tiên" name="priority" :value="old('priority', $category->priority ?? 0)"/>
                     </div>
                     <div class="col-md-6">
-                        <x-admin.inputs.select-simple label="Trạng thái" name="is_active" :required="true">
-                            <option value="1" @selected(old('is_active', $category->is_active ?? 1) == 1)>Hoạt động</option>
-                            <option value="0" @selected(old('is_active', $category->is_active ?? 1) == 0)>Không hoạt động</option>
-                        </x-inputs.select-simple>
+                        <x-admin.inputs.switch
+                            label="Trạng thái"
+                            name="is_active"
+                            :checked="old('is_active', $category->is_active ?? 1) == 1"
+                        />
                     </div>
                 </div>
 

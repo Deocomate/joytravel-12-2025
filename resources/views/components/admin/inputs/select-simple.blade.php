@@ -1,9 +1,10 @@
-<div class="form-group">
-    <label for="input-{{$name}}">{{$label}}</label>
-    <select name="{{$name}}" id="input-{{$name}}" class="form-control" @if($required) required @endif>
-        {{$slot}}
-    </select>
-    @error($name)
-    <div class="text-danger">{{ $message }}</div>
-    @enderror
-</div>
+<x-admin.inputs.select
+    :label="$label"
+    :name="$name"
+    :value="$value"
+    :required="$required"
+    :searchable="false"
+    {{ $attributes }}
+>
+    {{ $slot }}
+</x-admin.inputs.select>

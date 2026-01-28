@@ -23,12 +23,12 @@
                     <form action="{{ route('admin.tours.index') }}" method="GET" id="filter-form">
                         <div class="row">
                             <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Tìm kiếm</label>
-                                    <input type="text" name="search" class="form-control"
-                                           placeholder="Tìm theo tên hoặc mã tour..."
-                                           value="{{ request('search') }}">
-                                </div>
+                                <x-admin.inputs.text
+                                    label="Tìm kiếm"
+                                    name="search"
+                                    :value="request('search')"
+                                    placeholder="Tìm theo tên hoặc mã tour..."
+                                />
                             </div>
                             <div class="col-md-4">
                                 <x-admin.inputs.select label="Lọc theo danh mục" name="category_id">
@@ -38,7 +38,7 @@
                                             {{ $category->name }}
                                         </option>
                                     @endforeach
-                                </x-inputs.select>
+                                </x-admin.inputs.select>
                             </div>
                             <div class="col-md-4">
                                 <x-admin.inputs.select label="Lọc theo điểm đến" name="destination_id">
@@ -48,7 +48,7 @@
                                             {{ $destination->name }}
                                         </option>
                                     @endforeach
-                                </x-inputs.select>
+                                </x-admin.inputs.select>
                             </div>
                             <div class="col-md-8">
                                 <div class="form-group">

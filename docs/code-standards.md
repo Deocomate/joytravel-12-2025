@@ -65,8 +65,8 @@ protected $casts = [
 
 ### Slugs
 
-- Generate slugs manually in Controller using `Str::slug()`.
-- Implement a `while` loop to ensure uniqueness (e.g., appending `-1`, `-2`).
+- Use `App\Services\Common\SlugService` for slug generation.
+- Ensure uniqueness by looping with `-1`, `-2`, etc.
 
 ## 5. Controller Logic
 
