@@ -1,65 +1,58 @@
 # Project Overview - King Express Travel
 
-## Product Summary
+## Thông tin dự án
 
-**King Express Travel** is a hybrid monolith web application for a Vietnamese travel agency. It combines a high-performance, SEO-friendly client website with a robust internal admin panel.
+- **Tên dự án:** King Express Travel Booking System
+- **Phiên bản:** v1.0.0 (Release 2026)
+- **Mô hình:** Hybrid Monolith (Laravel 12 + Blade Rendering)
 
-## Status: V1.0.0 (Development/Staging)
+## Mục tiêu sản phẩm
 
-- **Framework**: Laravel 12
-- **Last Update**: January 2026
+Xây dựng nền tảng bán tour du lịch nội địa chuyên nghiệp, tối ưu hóa quy trình từ lúc khách hàng tìm kiếm tour đến khi quản trị viên xác nhận và xử lý đơn hàng.
 
-## Core Features Implemented
+## Tính năng cốt lõi (Core Features)
 
-### 1. Client Website (Frontend)
+### 1. Phía Khách hàng (Client)
 
-- **Home Page**: Hero slider, featured tours, popular destinations, stats.
-- **Tour Booking**:
-    - Filter by Category, Destination, Price, Duration.
-    - Detail view with Image Gallery (Swiper), Itinerary (Accordion).
-    - Checkout form with Multi-pax pricing (Adult/Child/Toddler/Infant).
-- **User System**:
-    - Register/Login (Local + Google OAuth).
-    - Profile: Update info, Change password.
-    - **Booking History**: View orders, Cancel order (if status is Pending).
-- **News & Info**: Blog listing, Detail view, About Us, Contact form.
+- **Trang chủ:** Hero slider, Tour nổi bật, Điểm đến phổ biến, Thống kê động.
+- **Tìm kiếm & Đặt tour:**
+  - Bộ lọc AJAX (không load lại trang) theo giá, danh mục, điểm đến.
+  - Gợi ý tìm kiếm (Search Suggestions) qua API.
+  - Form đặt tour chi tiết: Tính toán giá theo số lượng người lớn/trẻ em.
+- **Hệ thống thành viên:**
+  - Đăng ký/Đăng nhập (Local + Google OAuth).
+  - Quản lý hồ sơ: Đổi avatar, đổi mật khẩu.
+  - **Quản lý đơn hàng:** Xem lịch sử, Hủy đơn hàng (nếu đang ở trạng thái Chờ xử lý).
+- **Nội dung:** Blog tin tức, Trang giới thiệu, Form liên hệ (gửi về Admin).
 
-### 2. Admin Panel (Backend)
+### 2. Phía Quản trị (Admin)
 
-- **Dashboard**: Chart.js integration for Revenue & Order statistics (Filter by Week/Month/Year).
-- **Tour Management**:
-    - Full CRUD.
-    - **Itinerary Builder**: Dynamic JSON-based schedule builder.
-    - **Gallery Manager**: Multiple image selection via CKFinder.
-- **Order Management**:
-    - Workflow: Pending -> Confirmed -> Completed/Cancelled.
-    - Payment status tracking.
-- **Content Management**:
-    - Category Tree (Nested Sortable).
-    - Destinations, News, About Us, Contact Info.
-    - Customer Care (Contact form submissions).
+- **Dashboard:** Biểu đồ doanh thu/đơn hàng theo tuần/tháng/năm (Chart.js).
+- **Quản lý Tour:**
+  - Tạo/Sửa tour với đầy đủ thông tin SEO, giá vé, lịch trình chi tiết.
+  - Công cụ "Thêm danh mục hàng loạt" cho các tour theo từ khóa tên.
+- **Quản lý Đơn hàng:**
+  - Xem chi tiết, cập nhật trạng thái (Xác nhận, Hoàn thành, Hủy).
+  - Cập nhật trạng thái thanh toán (Thủ công).
+- **CMS:** Quản lý Danh mục (kéo thả sắp xếp), Tin tức, Điểm đến, Thông tin công ty.
 
-## Key Technical Decisions
+## Quyết định kỹ thuật (Technical Decisions)
 
-### 1. No API-First Approach
+### 1. Service Layer Pattern
 
-The project uses Server-Side Rendering (Blade) for SEO benefits and rapid development. API endpoints (`/api/*`) exist only for specific AJAX features like Search Suggestions.
+Dự án tách biệt logic nghiệp vụ ra khỏi Controller. Controller chỉ đóng vai trò điều phối (nhận request -> gọi service -> trả response). Điều này giúp code dễ bảo trì và mở rộng.
 
-### 2. File Management
+### 2. JSON Storage
 
-**CKFinder 5** is deeply integrated. Images are not stored via standard Laravel Storage `put()`, but managed through the CKFinder interface and referenced by relative URL paths in the database.
+Sử dụng cột JSON trong MySQL để lưu trữ:
 
-### 3. Payment Gateway
+- **Album ảnh tour:** Thay vì bảng quan hệ 1-n, giúp truy xuất nhanh hơn.
+- **Lịch trình tour:** Cấu trúc mảng linh động, dễ dàng render ở frontend.
 
-Currently, the system uses a **Manual Payment** model or **VNPAY Placeholder**.
+### 3. CKFinder Integration
 
-- Users select "Office Payment" or "VNPAY".
-- Orders are created with `PENDING` payment status.
-- Admin manually updates payment status after verifying bank transfer or cash.
+Không sử dụng `Storage::put` mặc định của Laravel cho nội dung bài viết/tour. Tích hợp CKFinder 5 để quản lý file tập trung, cho phép tái sử dụng hình ảnh và quản lý thư mục trực quan.
 
-## Future Roadmap (To-Do)
+### 4. Frontend Architecture
 
-1. **Payment Integration**: Implement real VNPAY/Momo IPN callback.
-2. **Security**: Replace `CustomCKFinderAuth` with real Admin middleware check.
-3. **Caching**: Implement Redis caching for Homepage and Tour Listing to improve performance under load.
-4. **Notifications**: Real-time notifications (Pusher) for new orders.
+Sử dụng **Alpine.js** thay vì Vue/React để giữ sự đơn giản của Blade template nhưng vẫn đảm bảo tính tương tác cao (Dropdown, Modal, Search box) mà không cần build step phức tạp.

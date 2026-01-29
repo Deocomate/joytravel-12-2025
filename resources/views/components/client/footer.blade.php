@@ -49,10 +49,12 @@
                     {{ optional($contactInfo)->company_name ?? 'Công ty Du lịch King Express' }}
                 </h3>
                 <div class="space-y-4 text-sm text-gray-600">
-                    @if (optional($contactInfo)->branches->isNotEmpty())
+                    @php
+                        $branches = $contactInfo?->branches;
+                    @endphp
+                    @if ($branches && $branches->isNotEmpty())
                         @php
-                            $mainBranch =
-                                $contactInfo->branches->firstWhere('is_main', true) ?? $contactInfo->branches->first();
+                            $mainBranch = $branches->firstWhere('is_main', true) ?? $branches->first();
                         @endphp
                         @if ($mainBranch)
                             <p class="flex items-start gap-x-3 group">

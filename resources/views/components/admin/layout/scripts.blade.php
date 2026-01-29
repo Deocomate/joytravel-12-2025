@@ -60,6 +60,10 @@
 {{-- Ckeditor & CKFinder Setup --}}
 @include('ckfinder::setup')
 
+{{-- CKEditor --}}
+<script src="{{ asset('/js/ckeditor/ckeditor.js') }}"></script>
+<script src="{{ asset('/admin/js/ckeditor-config.js') }}"></script>
+
 {{-- AdminLTE App --}}
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
 

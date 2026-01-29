@@ -34,11 +34,6 @@
     </div>
 </div>
 
-@pushonce("scripts")
-    <script src="{{ asset('/js/ckeditor/ckeditor.js') }}"></script>
-    <script src="{{ asset('/admin/js/ckeditor-config.js') }}"></script>
-@endpushonce
-
 @push("scripts")
     <script>
         document.addEventListener("DOMContentLoaded", function () {

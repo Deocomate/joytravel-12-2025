@@ -1,241 +1,134 @@
-# King Express Travel
+# King Express Travel (v1.0.0-2026)
 
-**Tour Sales Management System** - A full-stack Laravel application for Vietnamese travel agency operations.
+**Hệ thống Quản lý và Kinh doanh Tour Du lịch** - Nền tảng Fullstack Laravel hiện đại dành cho đại lý lữ hành tại Việt Nam.
 
-## Overview
+## 🌟 Tổng quan
 
-King Express Travel provides a complete tour booking ecosystem with:
-- **Client Website**: Public-facing tour browsing, booking, and user accounts
-- **Admin Panel**: Content management, order processing, and analytics
+King Express Travel là một ứng dụng Hybrid Monolith mạnh mẽ:
 
-## Tech Stack
+- **Client (Frontend):** Giao diện đặt tour công khai, tối ưu SEO, trải nghiệm người dùng mượt mà với Tailwind CSS & Alpine.js.
+- **Admin (Backend):** Hệ thống quản trị nội dung (CMS) và xử lý đơn hàng chuyên sâu sử dụng AdminLTE 3.
 
-| Layer | Technology |
-|-------|------------|
-| Backend | PHP 8.2, Laravel 12.0 |
-| Database | MySQL 8.0 |
-| Admin UI | AdminLTE 3, Bootstrap 4, jQuery |
-| Client UI | Tailwind CSS, Swiper.js, AOS |
-| Auth | Laravel Session, Google OAuth (Socialite) |
-| Rich Text | CKEditor 5 + CKFinder |
-| Email | Laravel Mail (Queued) |
+## 🛠 Tech Stack
 
-## Features
+| Layer | Công nghệ | Chi tiết |
+| --- | --- | --- |
+| **Core** | PHP 8.2+, Laravel 12.0 | Service Pattern, Queued Jobs |
+| **Database** | MySQL / MariaDB | JSON Columns (Lịch trình, Ảnh), Enum Status |
+| **Admin UI** | AdminLTE 3 | Bootstrap 4, jQuery, Select2, SortableJS |
+| **Client UI** | Tailwind CSS v3 | Alpine.js, SwiperJS, AOS, Fancybox |
+| **File Mgr** | CKFinder 5 | Tích hợp sâu (Popup mode), lưu đường dẫn relative |
+| **Auth** | Laravel Auth | Dual Guards, Google OAuth (Socialite) |
+
+## 🚀 Tính năng nổi bật
 
 ### Client Website
-- Tour browsing with filters (destination, category, price)
-- Multi-passenger booking (adult/child/toddler/infant pricing)
-- User authentication (local + Google OAuth)
-- Profile management & booking history
-- News/Blog section, About Us, Contact pages
+
+- **Tìm kiếm thông minh:** Lọc theo điểm đến, mức giá (Slider/Preset), loại hình tour.
+- **Đặt tour đa đối tượng:** Tính giá tự động cho Người lớn, Trẻ em, Trẻ nhỏ, Em bé.
+- **Tài khoản người dùng:** Đăng nhập Google, Quản lý lịch sử đơn hàng, Hủy tour (có điều kiện).
+- **Trải nghiệm:** Gallery ảnh Swiper, Lịch trình tour dạng Accordion, Animations (AOS).
 
 ### Admin Panel
-- Dashboard with revenue & visitor analytics
-- Tour CRUD with image galleries & itinerary builder
-- Order management with status workflow
-- Category tree management (for Tours & News)
-- User & destination management
 
-## Project Structure
+- **Dashboard:** Thống kê doanh thu, đơn hàng, khách hàng (Chart.js) theo bộ lọc thời gian.
+- **Quản lý Tour:**
+  - Builder lịch trình tour động (JSON).
+  - Chọn nhiều ảnh thư viện qua CKFinder.
+  - Công cụ gán danh mục hàng loạt cho Tour.
+- **Quản lý Đơn hàng:** Quy trình xử lý trạng thái (Pending -> Confirmed -> Completed).
+- **Quản lý Nội dung:** Cây danh mục đệ quy (Sortable), Tin tức, Điểm đến.
 
-```
-kingexpresstravel.com/
+## 📂 Cấu trúc dự án
+
+```text
+kingexpresstravel/
 ├── app/
-│   ├── Http/Controllers/
-│   │   ├── Admin/      # 11 admin controllers
-│   │   └── Client/     # 9 client controllers
-│   ├── Models/         # 12 Eloquent models
-│   ├── Mail/           # 3 queued mailables
-│   └── View/Components/ # 20 Blade components
-├── database/
-│   ├── migrations/     # Schema definitions
-│   └── seeders/        # Sample data
+│   ├── Http/Controllers/   # Controllers (Slim, gọi xuống Service)
+│   ├── Models/             # Eloquent Models (Casting JSON, Relations)
+│   ├── Services/           # Business Logic Layer
+│   │   ├── Admin/          # Logic quản trị (TourService, OrderService...)
+│   │   ├── Client/         # Logic client (BookingService, SearchService...)
+│   │   └── Common/         # Tiện ích chung (SlugService)
+│   └── View/Components/    # Blade Components (Admin Inputs, Client Cards)
 ├── resources/views/
-│   ├── admin/          # Admin panel views
-│   ├── client/         # Client website views
-│   └── components/     # Reusable Blade components
-├── routes/
-│   └── web.php         # ~55 route definitions
-├── docs/               # Project documentation
-└── public/             # Public assets
+│   ├── admin/              # AdminLTE Views
+│   ├── client/             # Tailwind Views
+│   └── components/         # Reusable UI Blocks (x-admin.inputs.*)
+└── public/userfiles/       # Kho lưu trữ ảnh (CKFinder)
 ```
 
-## Quick Start
+## ⚡ Cài đặt & Triển khai
 
-### Prerequisites
-- PHP 8.2+
+### Yêu cầu hệ thống
+
+- PHP >= 8.2
+- MySQL >= 8.0
 - Composer
-- MySQL 8.0+
-- Node.js (optional, for asset compilation)
+- Node.js (tùy chọn)
 
-### Installation
+### Các bước cài đặt
 
-```bash
-# Clone repository
-git clone [repository_url]
-cd kingexpresstravel.com
+1. **Clone Repository**
 
-# Install dependencies
-composer install
+   ```bash
+   git clone [url-repo]
+   cd kingexpresstravel
+   ```
 
-# Environment setup
-cp .env.example .env
-php artisan key:generate
+2. **Cài đặt Dependencies**
 
-# Configure database in .env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_DATABASE=king_express_travel
-DB_USERNAME=root
-DB_PASSWORD=your_password
+   ```bash
+   composer install
+   npm install && npm run build
+   ```
 
-# Run migrations & seeders
-php artisan migrate
-php artisan db:seed
+3. **Cấu hình môi trường**
 
-# Create storage symlink
-php artisan storage:link
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-# Start development server
-php artisan serve
-```
+   *Cấu hình DB_HOST, DB_DATABASE, DB_USERNAME, DB_PASSWORD trong `.env`*
 
-### Development Mode
+4. **Database & Seed Data**
 
-```bash
-# Run server, queue worker, and Vite simultaneously
-composer dev
-```
+   ```bash
+   php artisan migrate
+   php artisan db:seed
+   ```
 
-## Default Credentials
+   *(Tài khoản Admin mặc định: `root@gmail.com` / `password`)*
 
-| Role | Email | Notes |
-|------|-------|-------|
-| Admin | root@gmail.com | Created by UserSeeder |
+5. **Storage Link & CKFinder**
 
-## URL Structure
+   ```bash
+   php artisan storage:link
+   php artisan ckfinder:download
+   ```
 
-| Path | Description |
-|------|-------------|
-| `/` | Homepage |
-| `/du-lich` | Tour listings |
-| `/du-lich/{slug}` | Tour details |
-| `/dat-tour/{slug}` | Checkout |
-| `/tin-tuc` | News/Blog |
-| `/tai-khoan` | User profile |
-| `/admin` | Admin dashboard |
+6. **Chạy ứng dụng**
 
-## Database Schema
+   ```bash
+   php artisan serve
+   php artisan queue:listen # Để gửi email
+   ```
 
-### Core Tables
-- `users` - User accounts (local + OAuth)
-- `tours` - Tour products with pricing tiers
-- `orders` - Booking orders
-- `payments` - Payment transactions
-- `categories` - Hierarchical categories (TOUR/NEWS)
-- `destinations` - Travel locations
-- `news` - Blog articles
+## 📝 Quy ước phát triển (Code Standards)
 
-### Relationships
-```
-User ──1:N── Order ──1:1── Payment
-Tour ──M:N── Category (via tour_categories)
-Tour ──M:N── Destination (via tour_destinations)
-Category ──1:N── News
-Category ──self── Category (parent-child)
-```
+Xem chi tiết tại [`docs/code-standards.md`](./docs/code-standards.md).
 
-## Environment Variables
+- **Admin Forms:** Bắt buộc dùng Blade Components (`x-admin.inputs.text`, `x-admin.inputs.editor`...).
+- **Frontend:** Không dùng class Bootstrap. Sử dụng Utility classes của Tailwind.
+- **Logic:** Đặt logic nghiệp vụ phức tạp trong `App\Services`.
 
-### Required
-```ini
-APP_URL=http://localhost:8000
+## 🔒 Security & Middleware
 
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_DATABASE=king_express_travel
-DB_USERNAME=root
-DB_PASSWORD=
-
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.mailtrap.io
-MAIL_PORT=587
-MAIL_USERNAME=
-MAIL_PASSWORD=
-MAIL_FROM_ADDRESS=noreply@kingexpress.vn
-```
-
-### Google OAuth (Optional)
-```ini
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
-```
-
-## Documentation
-
-Detailed documentation available in [`docs/`](./docs/):
-
-- [`project-overview-pdr.md`](./docs/project-overview-pdr.md) - Project overview & product requirements
-- [`codebase-summary.md`](./docs/codebase-summary.md) - File structure & key components
-- [`code-standards.md`](./docs/code-standards.md) - Coding conventions & patterns
-- [`system-architecture.md`](./docs/system-architecture.md) - System design & database schema
-
-## Order Status Workflow
-
-```
-PENDING ──► CONFIRMED ──► COMPLETED
-    │
-    └──► CANCELLED (with reason)
-```
-
-## API Endpoints
-
-### Search
-- `GET /api/search-suggestions` - Tour search autocomplete
-- `GET /api/destination-suggestions` - Destination autocomplete
-
-### Rate Limits
-- Checkout: 2 requests/minute
-- Email verification: 1 request/5 minutes
-
-## Testing
-
-```bash
-# Run test suite
-composer test
-
-# Or directly
-php artisan test
-```
-
-## Artisan Commands
-
-```bash
-# Clear all caches
-php artisan optimize:clear
-
-# Regenerate IDE helper
-php artisan ide-helper:generate
-
-# Queue worker
-php artisan queue:work
-```
-
-## Known Limitations
-
-1. **CKFinder Auth**: Currently bypasses authentication - needs security hardening for production
-2. **API Layer**: `ApiBaseController` is placeholder for future mobile app
-3. **Payment Gateway**: Manual payment confirmation only - no integrated payment provider
-4. **Caching**: No Redis/cache implementation for high-traffic optimization
-
-## Contributing
-
-1. Follow coding standards in [`docs/code-standards.md`](./docs/code-standards.md)
-2. Use Vietnamese slugs for client-facing URLs
-3. Write queued mailables for all email functionality
-4. Use Blade components for reusable UI elements
+- **Admin:** Route `/admin` được bảo vệ bởi `AdminAuthMiddleware` (check role).
+- **Anti-Spam:** Booking form được bảo vệ bởi Honeypot field và Rate Limiting.
+- **Files:** `CustomCKFinderAuth` (Dev only) cần được cấu hình lại khi lên Production.
 
 ## License
 
-MIT License
+Dự án nội bộ King Express Travel.

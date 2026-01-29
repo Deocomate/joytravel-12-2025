@@ -31,7 +31,7 @@ class ClientBaseController extends Controller
 
         // Popular destinations - destinations with most tours, including thumbnail
         $popularDestinations = Destination::withCount('tours')
-            ->having('tours_count', '>', 0)
+            ->whereHas('tours')
             ->orderByDesc('tours_count')
             ->limit(6)
             ->get();

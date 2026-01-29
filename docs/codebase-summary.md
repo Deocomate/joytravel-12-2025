@@ -1,95 +1,57 @@
 # Codebase Summary - King Express Travel
 
+Tóm tắt cấu trúc và các thành phần chính của dự án.
+
 ## Directory Structure
 
 ```text
-kingexpresstravel.com/
+kingexpresstravel/
 ├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── Admin/          # 11 Controllers (Resource & Auth)
-│   │   │   ├── Client/         # 9 Controllers (Public Logic)
-│   │   │   └── Api/            # 1 Base Controller
-│   │   ├── Middleware/         # Auth guards & CKFinder bypass
-│   │   └── Requests/           # Form validation
-│   ├── Models/                 # 11 Eloquent Models
-│   ├── Mail/                   # 3 Mailables (Queue supported)
-│   └── View/Components/        # Blade Components logic
-│       ├── Admin/              # Inputs & Menus components
-│       └── Client/             # UI components (Header, Footer, Cards)
-├── config/                     # System configs (ckfinder, auth, mail)
-├── database/
-│   ├── migrations/             # 4 main migration files
-│   └── seeders/                # Database seeders
-├── public/
-│   ├── client/                 # Client assets (images/cities)
-│   └── userfiles/              # CKFinder storage
-├── resources/
-│   ├── views/
-│   │   ├── admin/              # AdminLTE Views
-│   │   ├── client/             # Tailwind Views
-│   │   ├── components/         # Reusable UI Blocks
-│   │   └── mail/               # Email Templates
+│   ├── Http/Controllers/
+│   │   ├── Admin/          # 11 Controllers quản lý (Tour, Order, Category...)
+│   │   ├── Client/         # 9 Controllers frontend (Home, Tour, Checkout, Auth...)
+│   │   └── Api/            # ApiBaseController (Search Suggestions)
+│   ├── Models/             # 12 Models (Tour, Order, Category, Payment...)
+│   ├── Services/           # Logic nghiệp vụ tách biệt
+│   │   ├── Admin/          # DashboardService, TourService, OrderService...
+│   │   ├── Client/         # BookingService, SearchService
+│   │   └── Common/         # SlugService, FileService
+│   ├── View/Components/    # Logic cho Blade Components
+│   │   ├── Admin/Inputs/   # Các input form backend
+│   │   └── Client/         # Header, Footer, Cards
+│   └── Mail/               # OrderConfirmationMail, ResetPassword, VerifyEmail
+├── resources/views/
+│   ├── admin/              # Giao diện AdminLTE (Modules: tours, orders, news...)
+│   ├── client/             # Giao diện Tailwind (Modules: tours, checkout, profile...)
+│   └── components/         # Blade views cho Components
 ├── routes/
-│   ├── web.php                 # ~50+ Routes (Grouped by Admin/Client)
-│   └── console.php             # Artisan commands
-└── docs/                       # Project Documentation
+│   └── web.php             # ~60 routes được phân nhóm rõ ràng (Admin/Client/Auth)
+└── public/
+    └── userfiles/          # Nơi lưu trữ ảnh upload qua CKFinder
 ```
 
 ## Key Components
 
-### 1. Controllers Layout
+### 1. Services (Logic Core)
 
-| Namespace  | Key Controllers                     | Purpose                             |
-| ---------- | ----------------------------------- | ----------------------------------- |
-| **Admin**  | `TourController`, `OrderController` | Core business logic management      |
-|            | `CategoryController`                | Recursive category tree (Tour/News) |
-|            | `AdminBaseController`               | Dashboard analytics & Charts        |
-| **Client** | `ClientTourController`              | Tour listing, filtering, detail     |
-|            | `ClientCheckoutController`          | Booking process & validation        |
-|            | `GoogleAuthController`              | Socialite integration               |
+- **BookingService:** Xử lý logic đặt tour, tính tổng tiền, tạo Order & Payment, gửi mail xác nhận.
+- **SearchService:** Xử lý bộ lọc tìm kiếm phức tạp (giá, danh mục đệ quy, điểm đến) và tạo query builder.
+- **TourService:** CRUD Tour, xử lý lưu JSON lịch trình, sync quan hệ many-to-many (categories, destinations).
+- **DashboardService:** Tổng hợp số liệu thống kê cho biểu đồ Chart.js.
 
-### 2. View Components (Blade)
+### 2. Blade Components quan trọng
 
-The project heavily relies on Blade Components for standardized UI:
+- `<x-admin.inputs.tour-schedule-array>`: Component phức tạp nhất, cho phép thêm/xóa ngày lịch trình và tích hợp CKEditor cho từng ngày.
+- `<x-admin.inputs.image-link-array>`: Quản lý album ảnh, tích hợp CKFinder popup chọn nhiều ảnh.
+- `<x-client.tour-search-bar>`: Thanh tìm kiếm sử dụng Alpine.js, hỗ trợ gợi ý AJAX (autocomplete).
 
-**Admin Inputs (`x-admin.inputs.*`):**
+### 3. Database Schema Highlights
 
-- `Text`, `Email`, `Number`, `Price`, `Time`, `Date`
-- `Select`, `SelectSimple`, `SelectMultiple`
-- `Editor` (CKEditor 5), `EditorArray`
-- `ImageLink` (CKFinder Popup), `ImageLinkArray`
-- `TourScheduleArray` (Complex JSON builder)
-
-**Client UI (`x-client.*`):**
-
-- `tour-card`: Displays tour thumbnail, price, rating.
-- `news-card`, `news-card-horizontal`: Blog layouts.
-- `tour-search-bar`: Floating search with Alpine.js.
-- `modal`: Reusable Alpine.js modal.
-
-### 3. Middleware
-
-- `AdminAuthMiddleware`: Protects `/admin` routes, checks `role === 'admin'`.
-- `ClientAuthMiddleware`: Placeholder for client-specific logic.
-- `CustomCKFinderAuth`: Bypasses CKFinder auth for local dev (Should be secured in prod).
-
-## Database & Models
-
-**Core Models:**
-
-- `Tour`: Uses JSON casting for `images` and `tour_schedule`.
-- `Category`: Recursive parent-child relationship.
-- `Order`: Links `User` and `Tour`.
-- `Payment`: One-to-one with `Order`.
-
-**Key Relationships:**
-
-- Tour `BelongsToMany` Category.
-- Tour `BelongsToMany` Destination (ordered by `position`).
-- User `HasMany` Order.
+- **Categories:** Cấu trúc cây (Parent-Child) với cột `type` (TOUR/NEWS).
+- **Tours:** Chứa thông tin giá vé đa tầng (Adult, Child, Toddler, Infant) và dữ liệu JSON cho hình ảnh/lịch trình.
+- **Orders:** Liên kết User (nullable) và Tour. Lưu trạng thái đơn hàng và lý do hủy.
 
 ## Frontend Technologies
 
-- **Admin:** AdminLTE 3 (Bootstrap 4), jQuery, Select2, Ion.RangeSlider, SortableJS.
-- **Client:** Tailwind CSS (v3 CDN), Alpine.js, SwiperJS, AOS (Animate On Scroll).
+- **Client:** Tailwind CSS v3, Alpine.js (Reactivity), Swiper (Sliders), AOS (Animation).
+- **Admin:** AdminLTE 3 (Bootstrap 4), jQuery, Select2, DataTables, SortableJS (Kéo thả lịch trình/danh mục).

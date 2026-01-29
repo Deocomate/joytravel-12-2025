@@ -17,15 +17,36 @@ class DestinationController extends Controller
 
     public function index(Request $request): View
     {
-        $query = Destination::query();
+        $totalDestinations = Destination::count();
+        $destinationsWithTours = Destination::whereHas('tours')->count();
+        $destinationsWithoutTours = max($totalDestinations - $destinationsWithTours, 0);
+
+        $query = Destination::query()->withCount('tours');
 
         $request->whenFilled('search', function ($search) use ($query) {
-            $query->where('name', 'like', '%' . $search . '%');
+            $query->where(function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('slug', 'like', '%' . $search . '%');
+            });
         });
+
+        if ($request->filled('has_tours')) {
+            if ($request->input('has_tours') === 'with') {
+                $query->whereHas('tours');
+            }
+            if ($request->input('has_tours') === 'without') {
+                $query->whereDoesntHave('tours');
+            }
+        }
 
         $destinations = $query->orderBy('name')->paginate(15)->withQueryString();
 
-        return view('admin.destinations.index', compact('destinations'));
+        return view('admin.destinations.index', compact(
+            'destinations',
+            'totalDestinations',
+            'destinationsWithTours',
+            'destinationsWithoutTours'
+        ));
     }
 
     public function create(): View

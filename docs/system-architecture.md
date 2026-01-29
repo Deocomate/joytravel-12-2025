@@ -2,76 +2,70 @@
 
 ## Tech Stack Overview
 
-| Layer         | Technology          | Details                                             |
-| ------------- | ------------------- | --------------------------------------------------- |
-| **Framework** | Laravel 12          | PHP 8.2+ Core                                       |
-| **Database**  | MySQL / MariaDB     | JSON Column Support                                 |
-| **Admin UI**  | AdminLTE 3          | Bootstrap 4, jQuery, CKEditor 5                     |
-| **Client UI** | Tailwind CSS        | Alpine.js, Swiper, AOS                              |
-| **Auth**      | Session & Socialite | Dual Guards (Web/Admin logic), Google Login         |
-| **File Mgr**  | CKFinder 5          | Integration via `ckfinder/ckfinder-laravel-package` |
+| Layer | Technology | Chi tiết |
+| --- | --- | --- |
+| **Framework** | Laravel 12 | PHP 8.2+ Core |
+| **Database** | MySQL / MariaDB | Hỗ trợ JSON Column |
+| **Admin UI** | AdminLTE 3 | Bootstrap 4, jQuery, CKEditor 5 |
+| **Client UI** | Tailwind CSS | Alpine.js, Swiper, AOS |
+| **Auth** | Session & Socialite | Dual Guards, Google Login |
+| **File Mgr** | CKFinder 5 | Package `ckfinder/ckfinder-laravel-package` |
 
-## Database Schema (ERD)
+## Database Schema (ERD Highlight)
 
 ### Users & Auth
 
-- **users**: `id`, `email`, `password`, `google_id`, `role` ('admin'|'user'), `account_type` (LOCAL/GOOGLE).
+- `users`: `id`, `email`, `password`, `google_id`, `role` ('admin'|'user'), `account_type` (LOCAL/GOOGLE).
 
 ### Content Management
 
-- **categories**: Recursive tree (`parent_id`), `type` ('TOUR'|'NEWS').
-- **tours**: Core product.
-    - `images`: JSON Array.
-    - `tour_schedule`: JSON Array of objects `{title, content}`.
-    - `price_*`: Multiple pricing tiers (Adult, Child, Toddler, Infant).
-- **destinations**: Locations (`name`, `slug`).
-- **news**: Blog posts linked to categories.
+- `categories`: `parent_id` (Đệ quy), `type` (Enum: TOUR/NEWS), `priority`.
+- `tours`:
+  - `images`: JSON Array (Lưu đường dẫn ảnh).
+  - `tour_schedule`: JSON Array (Cấu trúc: `[{title, content}, ...]`).
+  - `price_*`: Các cột giá riêng biệt cho từng đối tượng.
+- `destinations`: `name`, `slug`. Bảng trung gian `tour_destinations` có cột `position` để sắp xếp thứ tự điểm đến trong 1 tour.
 
 ### Sales & Operations
 
-- **orders**:
-    - Status: `PENDING` -> `CONFIRMED` -> `COMPLETED` | `CANCELLED`.
-    - `cancellation_reason`: Text (required if cancelled).
-- **payments**:
-    - Status: `PENDING` -> `SUCCESS` -> `REFUNDED`...
-    - `method`: 'Thanh toán tại văn phòng' | 'VNPAY'.
+- `orders`:
+  - `status`: PENDING -> CONFIRMED -> COMPLETED | CANCELLED.
+  - `cancellation_reason`: Text (Bắt buộc nếu hủy).
+- `payments`: Quan hệ 1-1 với Orders.
+  - `status`: PENDING -> SUCCESS -> FAILED...
+  - `method`: 'Thanh toán tại văn phòng' | 'VNPAY'.
 
 ## Request Life Cycle
 
-### 1. Booking Flow
+### 1. Luồng Đặt Tour (Booking Flow)
 
-1. **User** visits `/dat-tour/{slug}`.
-2. **ClientCheckoutController@store**:
-    - Validates input (Anti-bot check via hidden field).
-    - Checks `remaining_slots`.
-    - Creates `Order` (Pending).
-    - Creates `Payment` (Pending).
-    - Dispatches `OrderConfirmationMail` to Queue.
-3. **System** redirects to Home with Success Flash.
+1. **User** submit form tại `/dat-tour/{slug}`.
+1. **ClientCheckoutController** gọi `BookingService`.
+1. **BookingService**:
 
-### 2. Admin Processing Flow
+    - Validate số lượng chỗ còn trống (`remaining_slots`).
+    - Tính toán tổng tiền (`total_price`).
+    - DB Transaction: Tạo `Order` (Pending) -> Tạo `Payment` (Pending).
+    - Gửi email: Dispatch `OrderConfirmationMail` vào Queue.
 
-1. **Admin** views Order Detail.
-2. **Admin** updates Status (`PENDING` -> `CONFIRMED`).
-3. **Admin** updates Payment (Manual Transaction ID entry).
+1. Redirect user về Home với thông báo thành công.
 
-### 3. Search & Filter Flow
+### 2. Luồng Tìm kiếm & Lọc (Search Flow)
 
-- **Client Side**: Alpine.js watches inputs.
-- **AJAX**: Calls `/du-lich` with query params (`price_from`, `category`, `sort`).
-- **Controller**: Returns JSON with rendered Blade partial (`client.tours.partials.tour_list`).
-- **Client Side**: Appends HTML to DOM.
+1. **Client** thay đổi bộ lọc (Giá, Danh mục...). Alpine.js detect sự kiện.
+1. **AJAX Request** gửi tới `/du-lich` với query params.
+1. **ClientTourController** gọi `SearchService` để build query Eloquent.
+1. **Controller** trả về JSON: `{ html: 'rendered_blade_string', next_page_url: '...' }`.
+1. **Client** (JS) cập nhật DOM mà không reload trang.
 
 ## Security & Middleware
 
-| Middleware            | Route         | Function                                                      |
-| --------------------- | ------------- | ------------------------------------------------------------- |
-| `AdminAuthMiddleware` | `/admin/*`    | Enforces Auth check AND `role === 'admin'`.                   |
-| `throttle:2,1`        | `/dat-tour`   | Prevents booking spam (2 requests/min).                       |
-| `CustomCKFinderAuth`  | `/ckfinder/*` | **DEV ONLY**: Always returns true. Needs replacement in Prod. |
+- `AdminAuthMiddleware`: Bảo vệ tất cả routes `/admin/*`. Kiểm tra `Auth::check()` và `user->role === 'admin'`.
+- `throttle:2,1`: Áp dụng cho route POST `/dat-tour` để chống spam booking.
+- `CustomCKFinderAuth`: Middleware (hiện tại trong Dev) bypass authentication của CKFinder. **Cần thay thế bằng logic check quyền Admin khi lên Production.**
 
 ## File Management Architecture
 
-- Images are stored in `public/userfiles`.
-- Paths in DB are relative (e.g., `/userfiles/images/tour1.jpg`).
-- Admin uses `x-admin.inputs.image-link` to trigger CKFinder popup and return URL to input field.
+- Hình ảnh được lưu trong `public/userfiles`.
+- Database chỉ lưu đường dẫn tương đối (ví dụ: `/userfiles/images/tour1.jpg`).
+- Admin sử dụng Component `x-admin.inputs.image-link` để gọi popup CKFinder và trả URL về input field.
